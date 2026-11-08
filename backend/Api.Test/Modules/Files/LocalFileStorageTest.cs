@@ -1,5 +1,6 @@
-using Application.Infrastructure.Modules.Files;
 using Microsoft.Extensions.Options;
+using Application.Infrastructure.Modules.Files;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Api.Test.Modules.Files;
 
@@ -16,7 +17,7 @@ public sealed class LocalFileStorageTest
             {
                 DataDirectory = root,
                 RootPath = "files"
-            }));
+            }), NullLogger<LocalFileStorage>.Instance);
             await using var content = new MemoryStream("stored content"u8.ToArray());
 
             var result = await storage.SaveAsync(content, ".txt", 1024, TestContext.Current.CancellationToken);

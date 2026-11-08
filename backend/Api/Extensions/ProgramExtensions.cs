@@ -1,17 +1,18 @@
-using Api.Configuration;
+using Api.Services;
 using Api.Constants;
 using Api.Middleware;
+using Api.Configuration;
+using Time.Serialization;
 using Api.Modules.Realtime;
-using Api.Services;
 using Application.Extensions;
-using Application.Infrastructure.Modules.Files;
-using Application.Migrations.Extensions;
+using Localization.Configuration;
 using Application.Modules.Realtime;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
-using Time.Serialization;
+using Application.Migrations.Extensions;
+using Microsoft.AspNetCore.Http.Features;
+using Application.Infrastructure.Modules.Files;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace Api.Extensions;
 
@@ -80,6 +81,13 @@ internal static class ProgramExtensions
         app.UseExceptionHandler();
         app.UseRouting();
         app.UseCors();
+        LocalizationOptions localization = app.Services.GetRequiredService<IOptionsMonitor<LocalizationOptions>>().CurrentValue;
+        app.UseRequestLocalization(options =>
+        {
+            options.AddSupportedCultures(localization.SupportedCultures);
+            options.AddSupportedUICultures(localization.SupportedCultures);
+            options.SetDefaultCulture(localization.DefaultCulture);
+        });
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<ApiAccessMiddleware>();
         app.MapControllers();

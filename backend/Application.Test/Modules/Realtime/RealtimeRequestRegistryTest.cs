@@ -1,5 +1,6 @@
-using Application.Modules.Realtime;
 using System.Text.Json;
+using Application.Modules.Realtime;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Application.Test.Modules.Realtime;
 
@@ -8,7 +9,7 @@ public sealed class RealtimeRequestRegistryTest
     [Fact]
     public async Task Dispatches_only_explicitly_registered_requests()
     {
-        var registry = new RealtimeRequestRegistry([new EchoHandler()]);
+        var registry = new RealtimeRequestRegistry([new EchoHandler()], NullLogger<RealtimeRequestRegistry>.Instance);
         JsonElement payload = JsonSerializer.SerializeToElement(new { value = "hello" });
 
         JsonElement? response = await registry.DispatchAsync(

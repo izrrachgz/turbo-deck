@@ -12,3 +12,7 @@ process should proxy allow-listed HTTP and SignalR operations through a context-
 
 Uploaded files are untrusted content. The base validates size, extension, and declared media type, stores opaque names,
 prevents path traversal, and never extracts or executes uploads. It does not provide malware scanning.
+
+Structured logs must not contain control tokens, LAN API keys, realtime payloads, file bytes, database credentials,
+certificate passwords, or physical file paths. Stdout is reserved for the readiness record; operational logs belong on
+stderr and in the rolling files beneath the configured data directory.

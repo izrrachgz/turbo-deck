@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Bad_Gateway" xml:space="preserve">
+    <value>Bad Gateway</value>
+  </data>
+  <data name="Conflict" xml:space="preserve">
+    <value>Conflict</value>
+  </data>
+  <data name="File_Content_Does_Not_Match_Extension" xml:space="preserve">
+    <value>The file content does not match its extension.</value>
+  </data>
+  <data name="File_Exceeds_Maximum_Size" xml:space="preserve">
+    <value>The file exceeds the maximum size of {0} bytes.</value>
+  </data>
+  <data name="File_Is_Required" xml:space="preserve">
+    <value>A non-empty file is required.</value>
+  </data>
+  <data name="File_Type_Not_Allowed" xml:space="preserve">
+    <value>The file extension and content type are not allowed.</value>
+  </data>
+  <data name="Forbidden" xml:space="preserve">
+    <value>Forbidden</value>
+  </data>
+  <data name="Invalid_Model" xml:space="preserve">
+    <value>Invalid Request</value>
+  </data>
+  <data name="Not_Found" xml:space="preserve">
+    <value>Not Found</value>
+  </data>
+  <data name="Record_Not_Found" xml:space="preserve">
+    <value>Record not found.</value>
+  </data>
+  <data name="Server_Error" xml:space="preserve">
+    <value>Server Error</value>
+  </data>
+  <data name="Service_Unavailable" xml:space="preserve">
+    <value>Service Unavailable</value>
+  </data>
+  <data name="Too_Many_Requests" xml:space="preserve">
+    <value>Too Many Requests</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>Unauthorized</value>
+  </data>
+</root>

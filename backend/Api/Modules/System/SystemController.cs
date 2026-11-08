@@ -1,8 +1,9 @@
-using Api.Configuration;
-using Api.Constants;
 using Api.Models;
 using Api.Services;
+using Api.Constants;
+using Api.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Api.Modules.System.Logging;
 
 namespace Api.Modules.System;
 
@@ -11,7 +12,8 @@ namespace Api.Modules.System;
 public sealed class SystemController(
     IBackendSettingsStore settings,
     ISecurityTokenService tokens,
-    IHostApplicationLifetime lifetime) : ControllerBase
+    IHostApplicationLifetime lifetime,
+    ILogger<SystemController> logger) : ControllerBase
 {
     [HttpGet("network")]
     public ActionResult<NetworkSettingsResponse> GetNetwork() => Ok(settings.GetNetwork());
@@ -29,6 +31,7 @@ public sealed class SystemController(
             return Problem(statusCode: StatusCodes.Status409Conflict, title: "Generate a LAN API key before enabling LAN mode.");
 
         await settings.SaveNetworkAsync(request, cancellationToken);
+        logger.NetworkSettingsChanged(request.Mode, request.Port, request.DiscoveryEnabled);
         return Ok(new SettingsChangedResponse(RestartRequired: true));
     }
 
@@ -38,12 +41,14 @@ public sealed class SystemController(
         GeneratedLanApiKey generated = tokens.GenerateLanApiKey();
         await settings.SaveLanApiKeyAsync(generated, cancellationToken);
         tokens.SetLanKey(generated.Salt, generated.Hash);
+        logger.LanApiKeyRotated();
         return Ok(new LanApiKeyResponse(generated.Plaintext, RestartRequired: false));
     }
 
     [HttpPost("restart")]
     public ActionResult Restart()
     {
+        logger.RestartRequested();
         Environment.ExitCode = ApiConstants.RestartRequestedExitCode;
         Response.OnCompleted(() =>
         {
@@ -56,6 +61,7 @@ public sealed class SystemController(
     [HttpPost("shutdown")]
     public ActionResult Shutdown()
     {
+        logger.ShutdownRequested();
         Environment.ExitCode = 0;
         Response.OnCompleted(() =>
         {

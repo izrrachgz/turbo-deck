@@ -1,9 +1,13 @@
+using Api.Modules.Realtime.Logging;
 using Application.Modules.Realtime;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Modules.Realtime;
 
-internal sealed class SignalRRealtimePublisher(IHubContext<RealtimeHub, IRealtimeClient> hub, TimeProvider timeProvider)
+internal sealed class SignalRRealtimePublisher(
+    IHubContext<RealtimeHub, IRealtimeClient> hub,
+    TimeProvider timeProvider,
+    ILogger<SignalRRealtimePublisher> logger)
     : IRealtimePublisher
 {
     public async Task PublishAsync(RealtimePublishRequest request, CancellationToken cancellationToken = default)
@@ -29,5 +33,6 @@ internal sealed class SignalRRealtimePublisher(IHubContext<RealtimeHub, IRealtim
         };
 
         await client.Receive(message).WaitAsync(cancellationToken);
+        logger.RealtimeEventPublished(request.Name, request.Target, request.TargetId);
     }
 }

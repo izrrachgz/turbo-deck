@@ -19,7 +19,9 @@ Example readiness record:
 {"event":"ready","url":"http://127.0.0.1:54321","addresses":["http://127.0.0.1:54321"],"pid":1234}
 ```
 
-All backend logs are written to stderr. Electron must reject readiness URLs that are not loopback in loopback mode.
+All console logs are written to stderr, and rolling files are written beneath `TURBO_DECK_DATA_DIR\Logs`. Electron may
+consume stderr for diagnostics but must treat stdout exclusively as the readiness protocol. It must reject readiness
+URLs that are not loopback in loopback mode.
 
 ## Renderer boundary
 
@@ -27,6 +29,9 @@ The Angular renderer should never receive the backend URL or control token. Elec
 connections and exposes narrow, allow-listed IPC operations through a context-isolated preload. Recommended Electron
 settings are `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, denied permissions, and blocked
 unapproved navigation or webviews.
+
+Electron main may attach `Accept-Language` to proxied requests using an allow-listed application locale. The backend
+defaults and falls back to `en-US` and also includes `es-ES`; unsupported or missing translations fall back to English.
 
 ## Shutdown and restart
 

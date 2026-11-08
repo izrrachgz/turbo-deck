@@ -7,7 +7,7 @@ by Turbo Reactor without carrying over any Reactor-specific features.
 ## Repository layout
 
 ```text
-backend/    Modular API, CQRS application, domain, file storage, SignalR, and four-engine migrations
+backend/    Modular API, CQRS application, localization, structured logging, files, SignalR, and four-engine migrations
 desktop/    Angular renderer plus the Electron main/preload trust boundary
 scripts/    Build, backend publish, and Windows packaging entry points
 docs/       Architecture and development guidance
@@ -15,6 +15,8 @@ docs/       Architecture and development guidance
 
 SQLite and loopback-only hosting are the defaults. The backend also retains SQL Server, PostgreSQL, MySQL, configurable
 LAN hosting, mDNS discovery, generic file storage, and generic SignalR messaging.
+The backend includes English/Spanish localization and Serilog output to stderr, debug, and rolling files under the
+application data directory.
 
 ## Prerequisites
 

@@ -1,19 +1,25 @@
+using Api.Logging;
 using System.Diagnostics;
 
 namespace Api.Services;
 
-internal sealed class ParentProcessLifetimeService(IConfiguration configuration, IHostApplicationLifetime lifetime) : BackgroundService
+internal sealed class ParentProcessLifetimeService(
+    IConfiguration configuration,
+    IHostApplicationLifetime lifetime,
+    ILogger<ParentProcessLifetimeService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!int.TryParse(configuration["ParentPid"], out int parentPid) || parentPid <= 0)
             return;
 
+        logger.ParentProcessMonitoringStarted(parentPid);
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             if (!IsRunning(parentPid))
             {
+                logger.ParentProcessExited(parentPid);
                 lifetime.StopApplication();
                 return;
             }

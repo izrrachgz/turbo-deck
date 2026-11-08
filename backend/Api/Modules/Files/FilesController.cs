@@ -1,17 +1,19 @@
 using Api.Configuration;
-using Api.Modules.Files.Policies;
-using Api.Modules.Files.Requests;
-using Application.Modules.Files;
-using Application.Modules.Files.Commands;
-using Application.Modules.Files.Queries;
 using Cqrs.Abstractions;
 using Microsoft.AspNetCore.Mvc;
+using Application.Modules.Files;
+using Localization.Abstractions;
+using Api.Modules.Files.Policies;
+using Api.Modules.Files.Requests;
+using Application.Modules.Files.Queries;
+using Application.Localization.Resources;
+using Application.Modules.Files.Commands;
 
 namespace Api.Modules.Files;
 
 [ApiController]
 [Route("files")]
-public sealed class FilesController(IRequestDispatcher dispatcher, IConfiguration configuration) : ControllerBase
+public sealed class FilesController(IRequestDispatcher dispatcher, IConfiguration configuration, ITextProvider messages) : ControllerBase
 {
     private readonly long _maximumFileSizeBytes = configuration.GetValue<long>("Api:Files:MaximumFileSizeBytes");
 
@@ -26,15 +28,17 @@ public sealed class FilesController(IRequestDispatcher dispatcher, IConfiguratio
         {
             string message = failure switch
             {
-                FileUploadValidationFailure.FileRequired => "A non-empty file is required.",
-                FileUploadValidationFailure.FileTooLarge => $"The file exceeds {_maximumFileSizeBytes} bytes.",
-                _ => "The file extension and content type are not allowed."
+                FileUploadValidationFailure.FileRequired => messages.Get(nameof(Messages.File_Is_Required)),
+                FileUploadValidationFailure.FileTooLarge => messages.Get(nameof(Messages.File_Exceeds_Maximum_Size), _maximumFileSizeBytes),
+                _ => messages.Get(nameof(Messages.File_Type_Not_Allowed))
             };
             return Problem(statusCode: StatusCodes.Status400BadRequest, title: message);
         }
 
         if (!await FileUploadPolicy.HasValidSignatureAsync(request.File!, cancellationToken))
-            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "The file content does not match its extension.");
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: messages.Get(nameof(Messages.File_Content_Does_Not_Match_Extension)));
 
         IFormFile file = request.File!;
         await using Stream content = file.OpenReadStream();

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Bad_Gateway" xml:space="preserve">
+    <value>Puerta de enlace incorrecta</value>
+  </data>
+  <data name="Conflict" xml:space="preserve">
+    <value>Conflicto</value>
+  </data>
+  <data name="File_Content_Does_Not_Match_Extension" xml:space="preserve">
+    <value>El contenido del archivo no coincide con su extensión.</value>
+  </data>
+  <data name="File_Exceeds_Maximum_Size" xml:space="preserve">
+    <value>El archivo supera el tamaño máximo de {0} bytes.</value>
+  </data>
+  <data name="File_Is_Required" xml:space="preserve">
+    <value>Se requiere un archivo que no esté vacío.</value>
+  </data>
+  <data name="File_Type_Not_Allowed" xml:space="preserve">
+    <value>La extensión y el tipo de contenido del archivo no están permitidos.</value>
+  </data>
+  <data name="Forbidden" xml:space="preserve">
+    <value>Prohibido</value>
+  </data>
+  <data name="Invalid_Model" xml:space="preserve">
+    <value>Solicitud no válida</value>
+  </data>
+  <data name="Not_Found" xml:space="preserve">
+    <value>No encontrado</value>
+  </data>
+  <data name="Record_Not_Found" xml:space="preserve">
+    <value>No se encontró el registro.</value>
+  </data>
+  <data name="Server_Error" xml:space="preserve">
+    <value>Error del servidor</value>
+  </data>
+  <data name="Service_Unavailable" xml:space="preserve">
+    <value>Servicio no disponible</value>
+  </data>
+  <data name="Too_Many_Requests" xml:space="preserve">
+    <value>Demasiadas solicitudes</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>No autorizado</value>
+  </data>
+</root>

@@ -9,16 +9,25 @@
   <ItemGroup>
     <PackageReference Include="CommandQ.Common" />
     <PackageReference Include="CommandQ.Cqrs" />
+    <PackageReference Include="CommandQ.Localization" />
     <PackageReference Include="CommandQ.Persistence" />
     <PackageReference Include="CommandQ.Time" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Localization\Locales\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>locales\%(Filename)%(Extension)</TargetPath>
+    </None>
   </ItemGroup>
 
 </Project>

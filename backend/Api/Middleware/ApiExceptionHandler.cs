@@ -1,7 +1,9 @@
-using FluentValidation;
 using Api.Logging;
-using Microsoft.AspNetCore.Diagnostics;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Localization.Abstractions;
+using Microsoft.AspNetCore.Diagnostics;
+using Application.Localization.Resources;
 
 namespace Api.Middleware;
 
@@ -19,14 +21,15 @@ internal sealed class ApiExceptionHandler(IHostEnvironment environment, ILogger<
         if (status == StatusCodes.Status500InternalServerError)
             logger.UnhandledException(exception, context.TraceIdentifier);
 
+        ITextProvider messages = context.RequestServices.GetRequiredService<ITextProvider>();
         var problem = new ProblemDetails
         {
             Status = status,
             Title = status switch
             {
-                StatusCodes.Status400BadRequest => "The request is invalid.",
-                StatusCodes.Status404NotFound => "The requested resource was not found.",
-                _ => "The request could not be completed."
+                StatusCodes.Status400BadRequest => messages.Get(nameof(Messages.Invalid_Model)),
+                StatusCodes.Status404NotFound => messages.Get(nameof(Messages.Not_Found)),
+                _ => messages.Get(nameof(Messages.Server_Error))
             },
             Detail = environment.IsDevelopment() ? exception.Message : null,
             Instance = context.Request.Path

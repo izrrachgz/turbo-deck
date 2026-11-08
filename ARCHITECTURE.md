@@ -10,6 +10,8 @@ Electron main process
     |-- ASP.NET Core API on an OS-assigned loopback port
     |-- CQRS application and domain projects
     |-- SQLite by default; SQL Server, PostgreSQL, and MySQL optional
+    |-- English/Spanish localization and scoped text providers
+    |-- structured Serilog events and rolling data-directory logs
     |-- local file storage
     `-- generic SignalR hub
 ```
@@ -24,9 +26,9 @@ remain loopback-only.
 
 ## Source boundaries
 
-- `backend/Api`: process hosting, HTTP, SignalR, discovery, credentials, and lifecycle.
-- `backend/Application`: CQRS requests, validation, file workflows, and realtime contracts.
-- `backend/Application.Infrastructure`: filesystem adapters.
+- `backend/Api`: process hosting, HTTP, SignalR, discovery, credentials, lifecycle, culture selection, and Serilog setup.
+- `backend/Application`: CQRS requests, localized validation, resource catalogs, file workflows, and realtime contracts.
+- `backend/Application.Infrastructure`: filesystem adapters and infrastructure logging.
 - `backend/Domain`: infrastructure-free entities and abstractions.
 - `backend/Application.Migrations`: provider-specific embedded migrations.
 - `desktop/electron`: backend supervisor and privileged IPC adapters.

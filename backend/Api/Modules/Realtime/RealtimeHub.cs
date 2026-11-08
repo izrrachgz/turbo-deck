@@ -1,4 +1,5 @@
 using Api.Configuration;
+using Api.Modules.Realtime.Logging;
 using Application.Modules.Realtime;
 using Microsoft.AspNetCore.SignalR;
 using System.Text.RegularExpressions;
@@ -9,7 +10,8 @@ public sealed class RealtimeHub(
     RealtimeRequestRegistry requests,
     IRealtimeConnectionRegistry connections,
     TimeProvider timeProvider,
-    IConfiguration configuration) : Hub<IRealtimeClient>
+    IConfiguration configuration,
+    ILogger<RealtimeHub> logger) : Hub<IRealtimeClient>
 {
     private static readonly Regex IdentifierPattern = new("^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$", RegexOptions.CultureInvariant);
 
@@ -20,13 +22,20 @@ public sealed class RealtimeHub(
         Context.Items[nameof(clientId)] = clientId;
         connections.Add(clientId, Context.ConnectionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, ClientGroup(clientId), Context.ConnectionAborted);
+        logger.RealtimeClientConnected(clientId, Context.ConnectionId);
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         if (Context.Items.TryGetValue("clientId", out object? value) && value is string clientId)
+        {
             connections.Remove(clientId, Context.ConnectionId);
+            if (exception is null)
+                logger.RealtimeClientDisconnected(clientId, Context.ConnectionId);
+            else
+                logger.RealtimeClientDisconnectedWithError(exception, clientId, Context.ConnectionId);
+        }
 
         await base.OnDisconnectedAsync(exception);
     }
@@ -39,6 +48,7 @@ public sealed class RealtimeHub(
         if (request.ExpiresUtc is DateTime expires && expires <= now)
             throw new HubException("The realtime message has expired.");
 
+        logger.RealtimeMessageRouted(request.Kind, request.Name, origin, request.Target, request.TargetId);
         if (request.Target == RealtimeTargetKind.Server)
         {
             await DispatchToServer(request, now);
@@ -113,6 +123,7 @@ public sealed class RealtimeHub(
         }
         catch (KeyNotFoundException)
         {
+            logger.RealtimeServerRequestNotRegistered(request.Kind, request.Name, GetClientId());
             await Clients.Caller.ReceiveResponse(new RealtimeResponse(
                 Guid.NewGuid(),
                 request.CorrelationId ?? request.MessageId,

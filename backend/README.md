@@ -12,6 +12,7 @@ The backend has no users, accounts, roles, JWTs, OIDC, email, chat, or applicati
 - LAN mode binds configured interfaces, can advertise `_turbo-deck._tcp` through mDNS, and uses a persistent LAN API key.
 - LAN mode requires HTTPS unless `AllowInsecureHttp` is explicitly enabled.
 - The process writes one JSON readiness record to stdout; ordinary logs go to stderr.
+- Serilog writes structured events to stderr, the debugger, and rolling files under the configured data directory.
 - Exit code `23` requests a supervisor restart. The backend also stops when its configured parent PID exits.
 - SQLite is the default database. SQL Server, PostgreSQL, and MySQL remain supported through configuration and
   provider-specific embedded migrations.
@@ -38,6 +39,22 @@ the pinned packages are unavailable.
 
 The script generates a control token, starts on an OS-assigned loopback port, prints the token for development use,
 and relaunches the backend after an authenticated `POST /system/restart` request.
+
+## Localization
+
+Localization is configured under `Api:Localization`. The base supports `en-US` and `es-ES`, defaults and falls back to
+`en-US`, and selects the request culture from the standard ASP.NET Core culture providers, including `Accept-Language`.
+Application-owned RESX and JSON catalogs live under `Application/Localization`; they contain only generic API,
+validation, field-name, and file-module text. `ITextProvider` and `ValidationTextProvider` are scoped and registered by
+the Application DI composition root so future modules can add localized messages without changing the host boundary.
+
+## Logging
+
+Serilog is configured from `Api/appsettings.json` with console, debug, and rolling-file sinks. Console events are forced
+to stderr so stdout remains reserved for the Electron supervisor readiness record. File logs are written beneath
+`TURBO_DECK_DATA_DIR\Logs`, roll daily or at 10 MB, and retain 16 files. Host, Files, Realtime, infrastructure, and
+migration events use reserved ranges and source-generated `LoggerMessage` methods; credentials, payloads, file bytes,
+and physical paths are not logged.
 
 ## API surface
 

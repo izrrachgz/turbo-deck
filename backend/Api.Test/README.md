@@ -2,7 +2,7 @@
 
 Isolated API, middleware, local storage, and full-host tests. The factory uses a unique temporary SQLite database and a
 test control token. Tests cover the machine-credential boundary, health, file lifecycle, storage traversal protection,
-and removed-feature architecture constraints.
+request-culture negotiation, localized API responses, and removed-feature architecture constraints.
 
 Run with:
 

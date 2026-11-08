@@ -17,7 +17,7 @@ This branch is an Electron-backend scaffold with one deployable API and explicit
 Projects:
 
 - `Api` — Kestrel hosting, machine access boundary, lifecycle, discovery, Files HTTP, and SignalR transport.
-- `Application` — CQRS requests/handlers, validation, module contracts, and application-owned ports.
+- `Application` — CQRS requests/handlers, validation, localization catalogs, module contracts, and application-owned ports.
 - `Application.Infrastructure` — direct filesystem and provider-specific implementations of Application ports.
 - `Domain` — infrastructure-free entities and abstractions.
 - `Application.Migrations` — embedded forward-only schema migrations.
@@ -60,6 +60,22 @@ intentional ports; it must not use repositories, SqlKata, raw connections, or co
   `IRealtimeRequestHandler`; CQRS adapters derive from `RealtimeCqrsRequestHandler<TRequest,TResponse>`.
 - SignalR payloads carry file IDs, never file bytes.
 - In-memory routing is the default. Redis backplane support is optional and disabled unless configured.
+
+## Localization
+
+- `CommandQ.Localization` provides the reusable mechanism; application-owned catalogs live under `Application/Localization`.
+- Localization is registered in the Application DI composition root. Keep `ITextProvider` and `ValidationTextProvider` scoped.
+- `Api:Localization` owns default, fallback, supported-culture, locale-path, and provider-order configuration.
+- Request culture must be established before endpoints execute; Electron and LAN clients may select it with `Accept-Language`.
+- Keep the base catalogs free of business-specific text and update every supported JSON and RESX culture together.
+
+## Logging
+
+- Serilog is the host logging provider and is configured through `Api/appsettings.json`.
+- Preserve stdout exclusively for the single readiness JSON record. Console logs must remain on stderr.
+- Rolling file logs belong beneath the configured application data directory, never beside a packaged executable.
+- Reserve event-ID ranges by project/module and use source-generated `LoggerMessage` methods for structured events.
+- Never log control tokens, LAN API keys, realtime payloads, file bytes, or physical storage paths.
 
 ## Persistence and migrations
 

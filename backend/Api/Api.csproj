@@ -18,6 +18,11 @@
     <PackageReference Include="DSoft.Makaretu.Dns.Multicast" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.Debug" />
+    <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +30,7 @@
     <ProjectReference Include="..\Application.Infrastructure\Application.Infrastructure.csproj" />
     <ProjectReference Include="..\Application.Migrations\Application.Migrations.csproj" />
     <PackageReference Include="CommandQ.Cqrs" />
+    <PackageReference Include="CommandQ.Localization" />
     <PackageReference Include="CommandQ.Time" />
   </ItemGroup>
 

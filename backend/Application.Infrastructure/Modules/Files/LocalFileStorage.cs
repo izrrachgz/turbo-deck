@@ -1,22 +1,27 @@
-using Application.Modules.Files;
-using Microsoft.Extensions.Options;
 using System.Buffers;
+using Application.Modules.Files;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
+using Application.Infrastructure.Modules.Files.Logging;
 
 namespace Application.Infrastructure.Modules.Files;
 
 internal sealed class LocalFileStorage : IFileStorage
 {
     private const int BufferSize = 81920;
+    private readonly ILogger<LocalFileStorage> _logger;
     private readonly string _root;
     private readonly string _temporaryRoot;
 
-    public LocalFileStorage(IOptions<FileStorageOptions> options)
+    public LocalFileStorage(IOptions<FileStorageOptions> options, ILogger<LocalFileStorage> logger)
     {
+        _logger = logger;
         _root = LocalStoragePath.ResolveRoot(options.Value);
         _temporaryRoot = Path.Combine(_root, ".tmp");
         Directory.CreateDirectory(_root);
         Directory.CreateDirectory(_temporaryRoot);
+        _logger.FileStorageInitialized();
     }
 
     public async Task<FileStorageWriteResult> SaveAsync(
@@ -64,6 +69,7 @@ internal sealed class LocalFileStorage : IFileStorage
                 throw new InvalidDataException("The file is empty.");
 
             File.Move(temporaryPath, finalPath, overwrite: false);
+            _logger.FileContentWritten(storageName, total);
             return new FileStorageWriteResult(storageName, total, Convert.ToHexString(hash.GetHashAndReset()));
         }
         finally
@@ -77,7 +83,10 @@ internal sealed class LocalFileStorage : IFileStorage
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!LocalStoragePath.TryResolveFile(_root, storageName, out string path) || !File.Exists(path))
+        {
+            _logger.FileContentNotFound(storageName);
             return ValueTask.FromResult<Stream?>(null);
+        }
 
         Stream stream = new FileStream(path, new FileStreamOptions
         {
@@ -94,7 +103,10 @@ internal sealed class LocalFileStorage : IFileStorage
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (LocalStoragePath.TryResolveFile(_root, storageName, out string path) && File.Exists(path))
+        {
             File.Delete(path);
+            _logger.FileContentDeleted(storageName);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -110,19 +122,21 @@ internal sealed class LocalFileStorage : IFileStorage
             : string.Empty;
     }
 
-    private static void TryDelete(string path)
+    private void TryDelete(string path)
     {
         try
         {
             if (File.Exists(path))
                 File.Delete(path);
         }
-        catch (IOException)
+        catch (IOException exception)
         {
+            _logger.TemporaryUploadCleanupFailed(exception);
             // A later cleanup pass can remove an in-use temporary file.
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException exception)
         {
+            _logger.TemporaryUploadCleanupFailed(exception);
             // Preserve the original operation outcome when cleanup is denied.
         }
     }

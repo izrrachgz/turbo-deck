@@ -1,12 +1,31 @@
-using Api.Test.Infrastructure;
-using Application.Modules.Files;
 using System.Net;
 using System.Net.Http.Json;
+using Api.Test.Infrastructure;
+using Microsoft.AspNetCore.Mvc;
+using Application.Modules.Files;
 
 namespace Api.Test.Modules.Files;
 
 public sealed class FilesEndpointTest
 {
+    [Fact]
+    public async Task Upload_validation_uses_the_requested_culture()
+    {
+        await using var factory = new ApiFactory();
+        using HttpClient client = factory.CreateAuthenticatedClient();
+        client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("es-ES");
+        using var form = new MultipartFormDataContent
+        {
+            { new StringContent("test"), "Purpose" }
+        };
+
+        HttpResponseMessage response = await client.PostAsync("/files", form, TestContext.Current.CancellationToken);
+        ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("Se requiere un archivo que no esté vacío.", problem?.Title);
+    }
+
     [Fact]
     public async Task File_lifecycle_round_trips_through_the_API()
     {

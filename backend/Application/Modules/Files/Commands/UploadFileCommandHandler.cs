@@ -1,15 +1,18 @@
+using Time.Extensions;
 using Cqrs.Abstractions;
+using SqlKata.Execution;
 using Domain.Modules.Files;
 using Persistence.Abstractions;
-using SqlKata.Execution;
-using Time.Extensions;
+using Microsoft.Extensions.Logging;
+using Application.Modules.Files.Logging;
 
 namespace Application.Modules.Files.Commands;
 
 internal sealed class UploadFileCommandHandler(
     IWritableRepository repository,
     IFileStorage storage,
-    TimeProvider timeProvider) : ICommandHandler<UploadFileCommand, StoredFileModel>
+    TimeProvider timeProvider,
+    ILogger<UploadFileCommandHandler> logger) : ICommandHandler<UploadFileCommand, StoredFileModel>
 {
     public async Task<StoredFileModel> Handle(UploadFileCommand request, CancellationToken cancellationToken)
     {
@@ -38,6 +41,7 @@ internal sealed class UploadFileCommandHandler(
                 DeletedUtc = (DateTime?)null
             }, cancellationToken: cancellationToken);
 
+            logger.FileStored(id, written.Size, request.ContentType);
             return new StoredFile
             {
                 Id = id,
@@ -52,18 +56,21 @@ internal sealed class UploadFileCommandHandler(
                 ModifiedUtc = now
             }.ToModel();
         }
-        catch
+        catch (Exception exception)
         {
+            logger.FileMetadataSaveFailed(exception, written.StorageName);
             try
             {
                 await storage.DeleteAsync(written.StorageName, CancellationToken.None);
             }
-            catch (IOException)
+            catch (IOException cleanupException)
             {
+                logger.FileCleanupFailed(cleanupException, written.StorageName);
                 // Preserve the database exception; startup maintenance can remove an orphaned file.
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException cleanupException)
             {
+                logger.FileCleanupFailed(cleanupException, written.StorageName);
                 // Preserve the database exception; startup maintenance can remove an orphaned file.
             }
             throw;
