@@ -1,0 +1,103 @@
+{
+  "name": "turbo-deck-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turbo Deck Angular and Electron desktop host",
+  "main": "electron/main.js",
+  "author": "Turbo Deck contributors",
+  "license": "MIT",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
+  },
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build:ui": "ng build --configuration production",
+    "build:ui:dev": "ng build --configuration development",
+    "publish:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/publish-backend.ps1",
+    "electron:dev": "npm run build:ui:dev && electron .",
+    "package:win": "npm run build:ui && electron-builder --win nsis --x64",
+    "verify": "ng build --configuration production"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.5",
+    "@angular/cli": "22.2.5",
+    "@angular/common": "22.2.4",
+    "@angular/compiler": "22.2.4",
+    "@angular/compiler-cli": "22.2.4",
+    "@angular/core": "22.2.4",
+    "@angular/forms": "22.2.4",
+    "@angular/platform-browser": "22.2.4",
+    "electron": "43.8.6",
+    "electron-builder": "26.18.0",
+    "javascript-obfuscator": "5.5.0",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1",
+    "typescript": "6.0.3",
+    "zone.js": "0.16.0"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "4.6.6"
+    }
+  },
+  "build": {
+    "appId": "com.turbodeck.desktop",
+    "productName": "Turbo Deck",
+    "asar": true,
+    "npmRebuild": false,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
+    },
+    "directories": {
+      "output": "../artifacts/installer"
+    },
+    "files": [
+      {
+        "from": "electron",
+        "to": "electron",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "dist/turbo-deck-ui/browser",
+        "to": "ui",
+        "filter": ["**/*"]
+      },
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../artifacts/backend/win-x64/TurboDeck.Backend.exe",
+        "to": "backend/TurboDeck.Backend.exe"
+      },
+      {
+        "from": "../LICENSE",
+        "to": "LICENSE.txt"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "Turbo-Deck-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "Backend API",
+    "Projects": [
+      {
+        "Path": "Api\\Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "Api"
+      }
+    ]
+  }
+]

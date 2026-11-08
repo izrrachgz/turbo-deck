@@ -1,0 +1,3 @@
+namespace Application.Infrastructure;
+
+public sealed class ApplicationInfrastructureAssemblyMarker;

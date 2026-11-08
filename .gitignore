@@ -1,0 +1,51 @@
+# .NET and IDE output
+**/bin/
+**/obj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Tests and coverage
+TestResults/
+**/TestResults/
+coverage/
+coverage-*.xml
+*.coverage
+
+# Angular, Node.js, and Electron output
+desktop/node_modules/
+desktop/.angular/
+desktop/dist/
+desktop/out/
+desktop/release/
+*.tsbuildinfo
+npm-debug.log*
+
+# Published and packaged artifacts
+artifacts/
+
+# Runtime data and secrets
+**/App_Data/
+**/Logs/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.log
+.env
+.env.*
+!.env.example
+backendsettings.json
+*.local.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini

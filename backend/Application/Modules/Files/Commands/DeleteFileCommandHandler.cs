@@ -1,0 +1,36 @@
+using Cqrs.Abstractions;
+using Domain.Modules.Files;
+using Persistence.Abstractions;
+using SqlKata.Execution;
+using Time.Extensions;
+
+namespace Application.Modules.Files.Commands;
+
+internal sealed class DeleteFileCommandHandler(
+    IWritableRepository repository,
+    IFileStorage storage,
+    TimeProvider timeProvider) : ICommandHandler<DeleteFileCommand, bool>
+{
+    public async Task<bool> Handle(DeleteFileCommand request, CancellationToken cancellationToken)
+    {
+        StoredFile? file = await repository.Db.Query(nameof(StoredFile))
+            .Where(nameof(StoredFile.Id), request.Id)
+            .WhereNull(nameof(StoredFile.DeletedUtc))
+            .FirstOrDefaultAsync<StoredFile>(cancellationToken: cancellationToken);
+
+        if (file is null)
+            return false;
+
+        DateTime now = timeProvider.GetCurrentUtcDateTime();
+        int updated = await repository.Db.Query(nameof(StoredFile))
+            .Where(nameof(StoredFile.Id), request.Id)
+            .WhereNull(nameof(StoredFile.DeletedUtc))
+            .UpdateAsync(new { DeletedUtc = now, ModifiedUtc = now }, cancellationToken: cancellationToken);
+
+        if (updated == 0)
+            return false;
+
+        await storage.DeleteAsync(file.StorageName, cancellationToken);
+        return true;
+    }
+}
