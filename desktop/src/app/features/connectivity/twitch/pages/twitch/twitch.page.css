@@ -1,0 +1,46 @@
+.td-twitch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+  border-radius: .75rem;
+  background: color-mix(in srgb, var(--td-canvas) 72%, transparent);
+  padding: .8rem;
+}
+
+.td-twitch-cell { min-width: 0; }
+
+.td-twitch-key {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 4.5rem;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  border: 3px solid #474747;
+  border-radius: .8rem;
+  background-color: #070707;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  padding: .55rem;
+  color: #fff;
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 10%), inset 0 -2px 2px rgb(0 0 0 / 75%), 0 3px 5px rgb(0 0 0 / 55%);
+}
+
+.td-twitch-key:not(:disabled) { cursor: pointer; }
+.td-twitch-key:hover:not(:disabled) { border-color: var(--td-accent); transform: translateY(-1px); }
+.td-twitch-cell-bound .td-twitch-key { border-color: var(--td-accent); }
+.td-twitch-cell-unavailable .td-twitch-key { opacity: .55; }
+.td-twitch-key-shade { position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(0 0 0 / 12%) 25%, rgb(0 0 0 / 88%) 100%); }
+.td-twitch-coordinate { position: absolute; z-index: 1; top: .4rem; left: .45rem; color: rgb(255 255 255 / 72%); font-size: .62rem; font-weight: 700; }
+.td-twitch-linked-icon { position: absolute; z-index: 2; top: .35rem; right: .4rem; display: grid; width: 1.45rem; height: 1.45rem; place-items: center; border: 1px solid color-mix(in srgb, var(--td-accent) 75%, #fff); border-radius: 9999px; background: color-mix(in srgb, var(--td-accent) 88%, #000); color: var(--td-on-accent); box-shadow: 0 2px 5px rgb(0 0 0 / 45%); }
+.td-twitch-unavailable-icon { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; color: var(--td-text-muted); }
+.td-twitch-cell-label { position: relative; z-index: 1; overflow: hidden; color: #fff; font-size: .75rem; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.td-twitch-reward-badge { position: relative; z-index: 1; overflow: hidden; margin-top: .28rem; color: var(--td-accent-text); font-size: .65rem; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.td-twitch-dialog-key { position: relative; display: flex; aspect-ratio: 1; flex-direction: column; justify-content: flex-end; overflow: hidden; border: 3px solid var(--td-accent); border-radius: .8rem; background-color: #070707; background-position: center; background-repeat: no-repeat; background-size: cover; padding: .65rem; color: #fff; box-shadow: inset 0 1px 1px rgb(255 255 255 / 10%), inset 0 -2px 2px rgb(0 0 0 / 75%), 0 3px 8px rgb(0 0 0 / 45%); }
+
+@media (min-width: 1280px) {
+  .td-twitch-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}

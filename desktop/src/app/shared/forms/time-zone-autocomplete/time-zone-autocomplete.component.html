@@ -1,0 +1,15 @@
+<td-autocomplete-select
+  [label]="label | text"
+  [placeholder]="placeholder | text"
+  [noResultsText]="'settings.timeZoneNoResults' | text"
+  prefixIcon="clock"
+  [searchable]="true"
+  [allowCustomValue]="true"
+  [maxLength]="maxLength"
+  inputMode="text"
+  [options]="options"
+  [value]="value"
+  [disabled]="disabled"
+  (valueChange)="handleValueChange($event)"
+  (touched)="handleTouched()"
+/>

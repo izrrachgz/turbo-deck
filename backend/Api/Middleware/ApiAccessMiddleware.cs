@@ -21,21 +21,36 @@ internal sealed class ApiAccessMiddleware(
             return;
         }
 
-        bool loopback = context.Connection.RemoteIpAddress is null || IPAddress.IsLoopback(context.Connection.RemoteIpAddress);
-        bool management = context.Request.Path.StartsWithSegments("/system");
-        string controlToken = context.Request.Headers[ApiConstants.ControlTokenHeader].ToString();
-        string apiKey = context.Request.Headers[ApiConstants.ApiKeyHeader].ToString();
-
-        if (context.Request.Path.StartsWithSegments(ApiConstants.RealtimeHubPath) &&
-            context.Request.Query.TryGetValue("access_token", out var queryToken))
+        bool hostedClient = context.Request.Path.StartsWithSegments(ApiConstants.VisualizerPath) ||
+            context.Request.Path.StartsWithSegments(ApiConstants.DeckExplorerPath);
+        if (HttpMethods.IsGet(context.Request.Method) && hostedClient)
         {
-            apiKey = queryToken.ToString();
-            controlToken = queryToken.ToString();
+            await next(context);
+            return;
         }
 
-        bool allowed = management
+        bool loopback = context.Connection.RemoteIpAddress is null || IPAddress.IsLoopback(context.Connection.RemoteIpAddress);
+        bool management = context.Request.Path.StartsWithSegments("/system") || IsTwitchCredentialManagement(context.Request);
+        string controlToken = context.Request.Headers[ApiConstants.ControlTokenHeader].ToString();
+        string apiKey = context.Request.Headers[ApiConstants.ApiKeyHeader].ToString();
+        string queryToken = context.Request.Query["access_token"].ToString();
+        bool visualizerRealtime = context.Request.Path.StartsWithSegments(ApiConstants.VisualizerHubPath);
+        bool deckExplorerRealtime = context.Request.Path.StartsWithSegments(ApiConstants.DeckExplorerHubPath);
+        bool receiveOnlyRealtime = visualizerRealtime || deckExplorerRealtime;
+        bool realtime = receiveOnlyRealtime || context.Request.Path.StartsWithSegments(ApiConstants.RealtimeHubPath);
+        bool visualizerApi = context.Request.Path.StartsWithSegments(ApiConstants.VisualizerApiPath);
+        bool deckExplorerApi = context.Request.Path.StartsWithSegments(ApiConstants.DeckExplorerApiPath);
+        bool publicClientAccess = receiveOnlyRealtime || visualizerApi || deckExplorerApi;
+
+        if (realtime && !string.IsNullOrWhiteSpace(queryToken))
+        {
+            apiKey = queryToken;
+            controlToken = queryToken;
+        }
+
+        bool allowed = publicClientAccess || (management
             ? loopback && tokens.IsControlToken(controlToken)
-            : loopback && tokens.IsControlToken(controlToken) || tokens.IsLanApiKey(apiKey);
+            : loopback && tokens.IsControlToken(controlToken) || tokens.IsLanApiKey(apiKey));
 
         if (!allowed)
         {
@@ -59,10 +74,27 @@ internal sealed class ApiAccessMiddleware(
             return;
         }
 
+        if (receiveOnlyRealtime)
+            context.Items[ApiConstants.ReceiveOnlyPlaybackAccessItem] = true;
+
+        if (deckExplorerApi &&
+            !HttpMethods.IsGet(context.Request.Method) &&
+            context.Request.Headers.TryGetValue("Origin", out var deckOrigin) &&
+            !IsAllowedRealtimeOrigin(context, deckOrigin.ToString()))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            logger.AccessDenied(
+                context.Request.Method,
+                context.Request.Path,
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                context.Response.StatusCode);
+            return;
+        }
+
         if (network.Value.Mode == NetworkMode.Lan &&
-            context.Request.Path.StartsWithSegments(ApiConstants.RealtimeHubPath) &&
+            realtime &&
             context.Request.Headers.TryGetValue("Origin", out var origin) &&
-            !network.Value.CorsAllowedOrigins.Contains(origin.ToString().TrimEnd('/'), StringComparer.OrdinalIgnoreCase))
+            !IsAllowedRealtimeOrigin(context, origin.ToString()))
         {
             logger.RealtimeOriginDenied(
                 origin.ToString(),
@@ -73,4 +105,22 @@ internal sealed class ApiAccessMiddleware(
 
         await next(context);
     }
+
+    private bool IsAllowedRealtimeOrigin(HttpContext context, string origin)
+    {
+        string normalized = origin.TrimEnd('/');
+        string sameOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
+        return normalized.Equals(sameOrigin, StringComparison.OrdinalIgnoreCase) ||
+            network.Value.CorsAllowedOrigins.Contains(normalized, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsTwitchCredentialManagement(HttpRequest request)
+    {
+        if (!HttpMethods.IsPost(request.Method) || !request.Path.StartsWithSegments(ApiConstants.TwitchApiPath, out PathString remaining))
+            return false;
+        return remaining == "/device-authorization" ||
+            remaining == "/device-authorization/poll" ||
+            remaining == "/disconnect";
+    }
+
 }

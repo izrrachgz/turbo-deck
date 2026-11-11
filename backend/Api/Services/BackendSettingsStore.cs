@@ -1,7 +1,8 @@
-using Api.Configuration;
 using Api.Models;
-using Microsoft.Extensions.Options;
+using Api.Constants;
 using System.Text.Json;
+using Api.Configuration;
+using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
 
 namespace Api.Services;
@@ -13,6 +14,7 @@ public interface IBackendSettingsStore
     Task SaveNetworkAsync(NetworkSettingsRequest request, CancellationToken cancellationToken);
 
     Task SaveLanApiKeyAsync(GeneratedLanApiKey apiKey, CancellationToken cancellationToken);
+
 }
 
 internal sealed class BackendSettingsStore : IBackendSettingsStore
@@ -40,7 +42,8 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
 
     public NetworkSettingsResponse GetNetwork() => new(
         _network.Mode,
-        _network.Addresses,
+        NetworkAddressCatalog.NormalizeDistinct(_network.Addresses),
+        NetworkAddressCatalog.GetSuggestions(),
         _network.Port,
         _network.DiscoveryEnabled,
         _network.InstanceName,
@@ -49,7 +52,8 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         _network.AllowInsecureHttp,
         _network.Https.Enabled,
         _network.Https.CertificatePath,
-        !string.IsNullOrWhiteSpace(_network.Https.CertificatePassword));
+        !string.IsNullOrWhiteSpace(_network.Https.CertificatePassword),
+        !string.IsNullOrWhiteSpace(_security.LanApiKeyHash));
 
     public async Task SaveNetworkAsync(NetworkSettingsRequest request, CancellationToken cancellationToken)
     {
@@ -63,7 +67,7 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
             settings.Api.Network = new PersistedNetworkSettings
             {
                 Mode = request.Mode,
-                Addresses = request.Addresses,
+                Addresses = NetworkAddressCatalog.NormalizeDistinct(request.Addresses),
                 Port = request.Port,
                 DiscoveryEnabled = request.DiscoveryEnabled,
                 InstanceName = request.InstanceName.Trim(),
@@ -74,7 +78,9 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
                 {
                     Enabled = request.Https.Enabled,
                     CertificatePath = request.Https.CertificatePath,
-                    CertificatePassword = request.Https.CertificatePassword
+                    CertificatePassword = string.IsNullOrEmpty(request.Https.CertificatePassword)
+                        ? _network.Https.CertificatePassword
+                        : request.Https.CertificatePassword
                 }
             };
             await WriteAsync(settings, cancellationToken);
@@ -91,11 +97,8 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         try
         {
             PersistedBackendSettings settings = await ReadAsync(cancellationToken);
-            settings.Api.Security = new PersistedSecuritySettings
-            {
-                LanApiKeySalt = apiKey.Salt,
-                LanApiKeyHash = apiKey.Hash
-            };
+            settings.Api.Security.LanApiKeySalt = apiKey.Salt;
+            settings.Api.Security.LanApiKeyHash = apiKey.Hash;
             await WriteAsync(settings, cancellationToken);
         }
         finally
@@ -169,7 +172,7 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
 
         public string[] Addresses { get; set; } = ["127.0.0.1"];
 
-        public int Port { get; set; }
+        public int Port { get; set; } = ApiConstants.DefaultPort;
 
         public bool DiscoveryEnabled { get; set; }
 
@@ -186,7 +189,7 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         public static PersistedNetworkSettings From(NetworkOptions options) => new()
         {
             Mode = options.Mode,
-            Addresses = options.Addresses,
+            Addresses = NetworkAddressCatalog.NormalizeDistinct(options.Addresses),
             Port = options.Port,
             DiscoveryEnabled = options.DiscoveryEnabled,
             InstanceName = options.InstanceName,
@@ -202,5 +205,6 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         public string LanApiKeySalt { get; set; } = string.Empty;
 
         public string LanApiKeyHash { get; set; } = string.Empty;
+
     }
 }

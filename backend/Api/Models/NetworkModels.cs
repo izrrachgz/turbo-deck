@@ -17,6 +17,7 @@ public sealed record NetworkSettingsRequest(
 public sealed record NetworkSettingsResponse(
     NetworkMode Mode,
     string[] Addresses,
+    string[] SuggestedAddresses,
     int Port,
     bool DiscoveryEnabled,
     string InstanceName,
@@ -25,7 +26,8 @@ public sealed record NetworkSettingsResponse(
     bool AllowInsecureHttp,
     bool HttpsEnabled,
     string CertificatePath,
-    bool CertificatePasswordConfigured);
+    bool CertificatePasswordConfigured,
+    bool LanApiKeyConfigured);
 
 public sealed record SettingsChangedResponse(bool RestartRequired);
 

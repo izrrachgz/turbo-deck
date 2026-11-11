@@ -1,0 +1,17 @@
+<header class="mb-6"><p class="td-eyebrow">{{ 'nav.system' | text }}</p><h1 class="td-page-title">{{ 'nav.updates' | text }}</h1><p class="td-page-description">{{ 'page.updates.description' | text }}</p></header>
+@if (error()) { <p class="td-alert td-alert-danger">{{ error() }}</p> }
+@if (status(); as update) {
+  <section class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="td-eyebrow">{{ 'updates.installedVersion' | text }}</p><h2 class="text-2xl font-semibold text-slate-950">v{{ update.currentVersion }}</h2></div><span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">{{ phaseKey(update.phase) | text }}</span></div>
+    @if (update.availableVersion) { <p class="mt-4 text-sm text-slate-700">{{ 'updates.availableVersion' | text }} <strong>v{{ update.availableVersion }}</strong></p> }
+    @if (update.message) { <p class="mt-4 text-sm text-slate-600">{{ update.message }}</p> }
+    @if (update.progressPercent !== null && update.progressPercent !== undefined) { <div class="mt-4"><div class="mb-1 flex justify-between text-xs text-slate-500"><span>{{ 'updates.progress' | text }}</span><span>{{ update.progressPercent }}%</span></div><div class="h-2 overflow-hidden rounded-full bg-slate-200"><div class="h-full bg-teal-600 transition-all" [style.width.%]="update.progressPercent"></div></div></div> }
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button type="button" class="td-button-primary" [disabled]="busy() || update.phase === 'checking' || update.phase === 'downloading' || update.phase === 'verifying'" (click)="check()">{{ 'updates.check' | text }}</button>
+      @if (update.phase === 'available') { <button type="button" class="td-button-primary" [disabled]="busy()" (click)="download()">{{ 'updates.download' | text }}</button> }
+      @if (update.phase === 'ready') { <button type="button" class="td-button-primary" (click)="applyDialogOpen.set(true)">{{ 'updates.apply' | text }}</button> }
+    </div>
+  </section>
+  <section class="mt-6 grid gap-3 md:grid-cols-3"><article class="td-stat"><p class="td-eyebrow">1</p><h3 class="font-semibold">{{ 'updates.downloadStep' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'updates.downloadStepDescription' | text }}</p></article><article class="td-stat"><p class="td-eyebrow">2</p><h3 class="font-semibold">{{ 'updates.verifyStep' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'updates.verifyStepDescription' | text }}</p></article><article class="td-stat"><p class="td-eyebrow">3</p><h3 class="font-semibold">{{ 'updates.applyStep' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'updates.applyStepDescription' | text }}</p></article></section>
+}
+<td-confirmation-dialog [open]="applyDialogOpen()" (openChange)="applyDialogOpen.set($event)" title="updates.applyTitle" confirmLabel="updates.apply" icon="refresh-cw" [processing]="busy()" (confirmed)="apply()"><p>{{ 'updates.applyMessage' | text }}</p></td-confirmation-dialog>

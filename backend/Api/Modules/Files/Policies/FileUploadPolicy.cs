@@ -92,6 +92,7 @@ internal static class FileUploadPolicy
             ".webp" => StartsWith(bytes, "RIFF"u8) && At(bytes, 8, "WEBP"u8),
             ".flac" => StartsWith(bytes, "fLaC"u8),
             ".ogg" => StartsWith(bytes, "OggS"u8),
+            ".webm" => StartsWith(bytes, [0x1A, 0x45, 0xDF, 0xA3]),
             ".mp3" => StartsWith(bytes, "ID3"u8) || read >= 2 && bytes[0] == 0xFF && (bytes[1] & 0xE0) == 0xE0,
             ".mp4" or ".m4v" or ".m4a" or ".mov" => At(bytes, 4, "ftyp"u8),
             _ => true

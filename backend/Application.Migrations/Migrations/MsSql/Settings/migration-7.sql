@@ -1,0 +1,5 @@
+ALTER TABLE AppSettings ADD TimeZone VARCHAR(64) NOT NULL
+    CONSTRAINT DF_AppSettings_TimeZone DEFAULT 'UTC';
+
+ALTER TABLE AppSettings ADD CONSTRAINT CK_AppSettings_TimeZone
+    CHECK (LEN(TimeZone) BETWEEN 1 AND 64);

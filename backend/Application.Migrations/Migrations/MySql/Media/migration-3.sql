@@ -1,0 +1,36 @@
+CREATE TABLE MediaAsset (
+    Id BIGINT NOT NULL AUTO_INCREMENT,
+    StoredFileId BIGINT NOT NULL,
+    DisplayName VARCHAR(160) NOT NULL,
+    Kind VARCHAR(16) NOT NULL,
+    InspectionStatus VARCHAR(24) NOT NULL,
+    Width INT NULL,
+    Height INT NULL,
+    DurationMilliseconds BIGINT NULL,
+    VideoCodec VARCHAR(64) NULL,
+    AudioCodec VARCHAR(64) NULL,
+    HasAudio BOOLEAN NOT NULL DEFAULT FALSE,
+    WaveformData LONGTEXT NULL,
+    CreatedUtc DATETIME(6) NOT NULL,
+    ModifiedUtc DATETIME(6) NOT NULL,
+    DeletedUtc DATETIME(6) NULL,
+    ActiveStoredFileId BIGINT GENERATED ALWAYS AS (CASE WHEN DeletedUtc IS NULL THEN StoredFileId ELSE NULL END) STORED,
+    PRIMARY KEY (Id),
+    UNIQUE KEY UX_MediaAsset_StoredFileId (ActiveStoredFileId),
+    KEY IX_MediaAsset_CreatedUtc (CreatedUtc),
+    CONSTRAINT FK_MediaAsset_StoredFile FOREIGN KEY (StoredFileId) REFERENCES StoredFile (Id) ON DELETE RESTRICT,
+    CONSTRAINT CK_MediaAsset_Kind CHECK (Kind IN ('image', 'audio', 'video', 'unknown'))
+) ENGINE=InnoDB;
+
+ALTER TABLE CellConfig
+    ADD COLUMN MediaAssetId BIGINT NULL,
+    ADD COLUMN Volume DECIMAL(8,4) NOT NULL DEFAULT 1,
+    ADD COLUMN PlaybackRate DECIMAL(8,4) NOT NULL DEFAULT 1,
+    ADD COLUMN PitchSemitones DECIMAL(8,4) NOT NULL DEFAULT 0,
+    ADD COLUMN QueuePriority VARCHAR(16) NOT NULL DEFAULT 'normal',
+    ADD KEY IX_CellConfig_MediaAssetId (MediaAssetId),
+    ADD CONSTRAINT FK_CellConfig_MediaAsset FOREIGN KEY (MediaAssetId) REFERENCES MediaAsset (Id) ON DELETE SET NULL,
+    ADD CONSTRAINT CK_CellConfig_Volume CHECK (Volume BETWEEN 0 AND 1),
+    ADD CONSTRAINT CK_CellConfig_PlaybackRate CHECK (PlaybackRate BETWEEN 0.25 AND 4),
+    ADD CONSTRAINT CK_CellConfig_PitchSemitones CHECK (PitchSemitones BETWEEN -24 AND 24),
+    ADD CONSTRAINT CK_CellConfig_QueuePriority CHECK (QueuePriority IN ('normal', 'override'));

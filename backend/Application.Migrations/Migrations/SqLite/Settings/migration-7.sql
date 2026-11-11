@@ -1,0 +1,2 @@
+ALTER TABLE AppSettings ADD COLUMN TimeZone TEXT NOT NULL DEFAULT 'UTC'
+    CHECK (length(TimeZone) BETWEEN 1 AND 64);

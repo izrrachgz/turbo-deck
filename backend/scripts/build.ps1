@@ -20,5 +20,5 @@ if (-not $NoRestore) {
 dotnet build $solution --configuration $Configuration --no-restore
 
 if ($LASTEXITCODE -ne 0) {
-    throw "The command-q-back solution build failed."
+    throw "The Turbo Deck backend solution build failed."
 }

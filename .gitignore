@@ -18,6 +18,7 @@ coverage-*.xml
 desktop/node_modules/
 desktop/.angular/
 desktop/dist/
+desktop/dist-dev/
 desktop/out/
 desktop/release/
 *.tsbuildinfo

@@ -1,0 +1,10 @@
+<main #stage class="td-visualizer-stage" aria-live="off">
+  @if (playbackActivationRequired()) {
+    <section class="td-visualizer-activation">
+      <h1>{{ 'visualizer.enablePlaybackTitle' | text }}</h1>
+      <p>{{ 'visualizer.enablePlaybackDescription' | text }}</p>
+      <button type="button" [disabled]="enablingPlayback()" (click)="enablePlayback()">{{ (enablingPlayback() ? 'visualizer.enablingPlayback' : 'visualizer.enablePlayback') | text }}</button>
+    </section>
+  }
+  @if (error()) { <p class="td-visualizer-error">{{ error() }}</p> }
+</main>

@@ -6,18 +6,49 @@
   "main": "electron/main.js",
   "author": "Turbo Deck contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izrrachgz/turbo-deck.git"
+  },
+  "homepage": "https://github.com/izrrachgz/turbo-deck",
+  "bugs": {
+    "url": "https://github.com/izrrachgz/turbo-deck/issues"
+  },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || ^26.0.0"
   },
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build:ui": "ng build --configuration production",
-    "build:ui:dev": "ng build --configuration development",
+    "start": "ng serve turbo-deck-ui",
+    "build:ui": "ng build turbo-deck-ui --configuration production",
+    "build:ui:dev": "ng build turbo-deck-ui --configuration electron",
+    "build:visualizer": "ng build turbo-deck-visualizer --configuration production",
+    "build:visualizer:dev": "ng build turbo-deck-visualizer --configuration development",
+    "build:deck": "ng build turbo-deck-explorer --configuration production",
+    "build:deck:dev": "ng build turbo-deck-explorer --configuration development",
+    "build:all": "npm run build:ui && npm run build:visualizer && npm run build:deck",
+    "build:all:dev": "npm run build:ui:dev && npm run build:visualizer:dev && npm run build:deck:dev",
+    "build:backend:dev": "dotnet build ../backend/Api/Api.csproj",
     "publish:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/publish-backend.ps1",
-    "electron:dev": "npm run build:ui:dev && electron .",
-    "package:win": "npm run build:ui && electron-builder --win nsis --x64",
-    "verify": "ng build --configuration production"
+    "electron:dev": "npm run build:all:dev && npm run build:backend:dev && electron .",
+    "package:win": "npm run build:all && node electron/package.js win-x64",
+    "package:win:prepared": "node electron/package.js win-x64",
+    "package:linux:prepared": "node electron/package.js linux-x64",
+    "package:mac:prepared": "node electron/package.js osx-x64",
+    "test:electron": "node --test electron/*.test.js",
+    "test:ci": "ng test --watch=false",
+    "verify": "npm run test:electron && npm run test:ci && npm run build:all"
+  },
+  "dependencies": {
+    "@angular/cdk": "22.2.4",
+    "@angular/router": "22.2.4",
+    "@date-fns/tz": "1.5.0",
+    "@fontsource/roboto": "5.3.0",
+    "@lucide/angular": "1.31.0",
+    "@microsoft/signalr": "10.0.11",
+    "electron-updater": "6.8.11",
+    "qrcode": "1.5.4",
+    "tone": "15.1.22"
   },
   "devDependencies": {
     "@angular/build": "22.2.5",
@@ -28,76 +59,23 @@
     "@angular/core": "22.2.4",
     "@angular/forms": "22.2.4",
     "@angular/platform-browser": "22.2.4",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/qrcode": "1.5.6",
     "electron": "43.8.6",
     "electron-builder": "26.18.0",
     "javascript-obfuscator": "5.5.0",
+    "jsdom": "28.1.0",
+    "postcss": "8.5.32",
     "rxjs": "7.8.2",
+    "tailwindcss": "4.3.3",
     "tslib": "2.8.1",
     "typescript": "6.0.3",
+    "vitest": "4.1.12",
     "zone.js": "0.16.0"
   },
   "overrides": {
     "@vercel/cli-config": {
       "zod": "4.6.6"
-    }
-  },
-  "build": {
-    "appId": "com.turbodeck.desktop",
-    "productName": "Turbo Deck",
-    "asar": true,
-    "npmRebuild": false,
-    "electronFuses": {
-      "runAsNode": false,
-      "enableCookieEncryption": true,
-      "enableNodeOptionsEnvironmentVariable": false,
-      "enableNodeCliInspectArguments": false,
-      "enableEmbeddedAsarIntegrityValidation": true,
-      "onlyLoadAppFromAsar": true
-    },
-    "directories": {
-      "output": "../artifacts/installer"
-    },
-    "files": [
-      {
-        "from": "electron",
-        "to": "electron",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "dist/turbo-deck-ui/browser",
-        "to": "ui",
-        "filter": ["**/*"]
-      },
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "../artifacts/backend/win-x64/TurboDeck.Backend.exe",
-        "to": "backend/TurboDeck.Backend.exe"
-      },
-      {
-        "from": "../LICENSE",
-        "to": "LICENSE.txt"
-      }
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        }
-      ],
-      "artifactName": "Turbo-Deck-Setup-${version}-${arch}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowElevation": true,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false
     }
   }
 }

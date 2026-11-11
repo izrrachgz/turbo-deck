@@ -27,4 +27,12 @@
   <data name="Field_Must_Be_Greater_Than" xml:space="preserve">
     <value>{0} must be greater than {1}.</value>
   </data>
+  <data name="Animation_Type_Is_Not_Supported" xml:space="preserve"><value>The selected animation type is not supported.</value></data>
+  <data name="Culture_Is_Not_Supported" xml:space="preserve"><value>The selected culture is not supported.</value></data>
+  <data name="Display_Duration_Is_Not_Supported" xml:space="preserve"><value>The selected image duration is not supported.</value></data>
+  <data name="Display_Size_Is_Not_Supported" xml:space="preserve"><value>The selected display size is not supported.</value></data>
+  <data name="Palette_Is_Not_Supported" xml:space="preserve"><value>The selected palette is not supported by the selected theme.</value></data>
+  <data name="Queue_Priority_Is_Not_Supported" xml:space="preserve"><value>The selected queue priority is not supported.</value></data>
+  <data name="Theme_Is_Not_Supported" xml:space="preserve"><value>The selected theme is not supported.</value></data>
+  <data name="Time_Zone_Is_Not_Valid" xml:space="preserve"><value>The selected time zone must be a valid IANA identifier.</value></data>
 </root>

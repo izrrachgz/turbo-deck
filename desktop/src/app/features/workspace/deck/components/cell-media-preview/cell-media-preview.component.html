@@ -1,0 +1,17 @@
+<section class="td-cell-preview-panel">
+  <header class="flex items-center justify-between gap-3">
+    <div>
+      <h3 class="text-sm font-semibold text-slate-950">{{ 'deck.preview' | text }}</h3>
+      <p class="mt-0.5 text-xs text-slate-500">{{ 'deck.previewHelp' | text }}</p>
+    </div>
+    @if (playing()) {
+      <button type="button" class="td-button-secondary px-3 py-2" (click)="stop()">{{ 'deck.stopTest' | text }}</button>
+    }
+  </header>
+  <div #stage class="td-cell-preview-stage">
+    @if (!playing()) {
+      <p class="td-cell-preview-placeholder px-5 text-center text-xs">{{ (media ? 'deck.previewReady' : 'deck.previewEmpty') | text }}</p>
+    }
+  </div>
+  @if (error()) { <p class="td-cell-preview-error mt-2 text-xs font-medium">{{ error() }}</p> }
+</section>

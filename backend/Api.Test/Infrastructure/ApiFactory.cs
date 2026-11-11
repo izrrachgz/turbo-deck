@@ -8,6 +8,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     public const string ControlToken = "test-control-token";
     private readonly string _dataDirectory = Path.Combine(Path.GetTempPath(), $"command-q-api-test-{Guid.NewGuid():N}");
+    private readonly string[]? _addresses;
+
+    public ApiFactory(string[]? addresses = null)
+    {
+        _addresses = addresses;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -22,6 +28,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Api:ConnectionStrings:Db", $"Data Source={databasePath};Version=3;Foreign Keys=True;");
         builder.UseSetting("Api:Network:Mode", "Loopback");
         builder.UseSetting("Api:Network:Port", "0");
+        if (_addresses is not null)
+        {
+            for (int index = 0; index < _addresses.Length; index++)
+                builder.UseSetting($"Api:Network:Addresses:{index}", _addresses[index]);
+        }
     }
 
     public HttpClient CreateAuthenticatedClient()

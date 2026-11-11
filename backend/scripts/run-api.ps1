@@ -1,6 +1,6 @@
 param(
     [string]$Environment = "Development",
-    [int]$Port = 0,
+    [int]$Port = 52024,
     [string]$DataDirectory = "",
     [string]$ControlToken = "",
     [switch]$NoBuild

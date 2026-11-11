@@ -2,6 +2,7 @@ using Api.Models;
 using Api.Services;
 using Api.Constants;
 using Api.Configuration;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Api.Modules.System.Logging;
 
@@ -73,10 +74,13 @@ public sealed class SystemController(
 
     private static string? Validate(NetworkSettingsRequest request)
     {
-        if (request.Port is < 0 or > 65535)
-            return "The port must be between 0 and 65535.";
+        if (request.Port is < 1 or > 65535)
+            return "The port must be between 1 and 65535.";
         if (string.IsNullOrWhiteSpace(request.InstanceName) || request.InstanceName.Length > 100)
             return "The instance name is required and cannot exceed 100 characters.";
+        string? addressError = ValidateAddresses(request.Addresses);
+        if (addressError is not null)
+            return addressError;
         if (request.Mode == NetworkMode.Lan && request.Addresses.Length == 0)
             return "At least one LAN address is required.";
         if (request.CorsAllowedOrigins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out Uri? uri) ||
@@ -88,6 +92,26 @@ public sealed class SystemController(
             return "A certificate path is required when LAN HTTPS is enabled.";
         if (request.Mode == NetworkMode.Lan && !request.Https.Enabled && !request.AllowInsecureHttp)
             return "LAN mode requires HTTPS unless insecure HTTP is explicitly enabled.";
+        return null;
+    }
+
+    private static string? ValidateAddresses(string[] addresses)
+    {
+        if (addresses.Length > 32)
+            return "No more than 32 listener addresses can be configured.";
+
+        var parsedAddresses = new List<IPAddress>(addresses.Length);
+        foreach (string address in addresses)
+        {
+            if (!NetworkAddressCatalog.TryParse(address, out IPAddress parsed))
+                return "Every listener address must be localhost or a valid IPv4 or IPv6 address.";
+            if (parsedAddresses.Contains(parsed))
+                return "Listener addresses must be unique and cannot resolve to the same interface.";
+            parsedAddresses.Add(parsed);
+        }
+
+        if (parsedAddresses.Count > 1 && parsedAddresses.Any(NetworkAddressCatalog.IsWildcard))
+            return "A wildcard listener cannot be combined with another listener address.";
         return null;
     }
 }

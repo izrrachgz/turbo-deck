@@ -1,5 +1,7 @@
+using Api.Constants;
 using Api.Configuration;
 using Api.Modules.Realtime.Logging;
+using Application.Modules.Playback;
 using Application.Modules.Realtime;
 using Microsoft.AspNetCore.SignalR;
 using System.Text.RegularExpressions;
@@ -20,8 +22,12 @@ public sealed class RealtimeHub(
         string clientId = Context.GetHttpContext()?.Request.Query["clientId"].ToString() ?? string.Empty;
         ValidateIdentifier(clientId, "client ID");
         Context.Items[nameof(clientId)] = clientId;
+        bool receiveOnlyPlayback = Context.GetHttpContext()?.Items.ContainsKey(ApiConstants.ReceiveOnlyPlaybackAccessItem) == true;
+        Context.Items[ApiConstants.ReceiveOnlyPlaybackAccessItem] = receiveOnlyPlayback;
         connections.Add(clientId, Context.ConnectionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, ClientGroup(clientId), Context.ConnectionAborted);
+        if (receiveOnlyPlayback)
+            await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(PlaybackRealtimeContract.Group), Context.ConnectionAborted);
         logger.RealtimeClientConnected(clientId, Context.ConnectionId);
         await base.OnConnectedAsync();
     }
@@ -42,6 +48,7 @@ public sealed class RealtimeHub(
 
     public async Task Send(RealtimeSendRequest request)
     {
+        EnsureInteractiveClient();
         ValidateRequest(request);
         string origin = GetClientId();
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
@@ -85,17 +92,29 @@ public sealed class RealtimeHub(
 
     public async Task JoinGroup(string group)
     {
+        EnsureInteractiveClient();
         ValidateIdentifier(group, "group");
         await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(group), Context.ConnectionAborted);
     }
 
     public async Task LeaveGroup(string group)
     {
+        EnsureInteractiveClient();
         ValidateIdentifier(group, "group");
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, UserGroup(group), Context.ConnectionAborted);
     }
 
-    public IReadOnlyList<string> GetConnectedClients() => connections.GetConnectedClients();
+    public IReadOnlyList<string> GetConnectedClients()
+    {
+        EnsureInteractiveClient();
+        return connections.GetConnectedClients();
+    }
+
+    private void EnsureInteractiveClient()
+    {
+        if (Context.Items.TryGetValue(ApiConstants.ReceiveOnlyPlaybackAccessItem, out object? value) && value is true)
+            throw new HubException("Public playback clients can only receive playback events.");
+    }
 
     private async Task DispatchToServer(RealtimeSendRequest request, DateTime now)
     {

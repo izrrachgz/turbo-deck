@@ -1,0 +1,94 @@
+<a href="#main-content" class="sr-only fixed left-3 top-3 z-50 rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-950 focus:not-sr-only">
+  {{ 'accessibility.skipToContent' | text }}
+</a>
+
+<div class="min-h-dvh bg-slate-100 text-slate-950">
+  <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur lg:hidden">
+    <button type="button" class="td-icon-button" [attr.aria-label]="'accessibility.openNavigation' | text" (click)="mobileNavigationOpen = true">
+      <svg lucideIcon="menu" size="20" aria-hidden="true"></svg>
+    </button>
+    <div class="td-brand-mark">TD</div>
+    <div><strong>{{ 'app.name' | text }}</strong><p class="text-xs text-slate-500">{{ 'app.subtitle' | text }}</p></div>
+  </header>
+
+  @if (mobileNavigationOpen) {
+    <button type="button" class="fixed inset-0 z-40 bg-slate-950/60 lg:hidden" [attr.aria-label]="'accessibility.closeNavigation' | text" (click)="mobileNavigationOpen = false"></button>
+  }
+
+  <aside
+    class="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white shadow-xl transition-[width,transform] lg:z-20 lg:translate-x-0 lg:shadow-none"
+    [class.w-72]="!drawerCollapsed"
+    [class.w-20]="drawerCollapsed"
+    [class.-translate-x-full]="!mobileNavigationOpen"
+    [class.translate-x-0]="mobileNavigationOpen"
+  >
+    <div class="flex h-20 items-center gap-3 border-b border-slate-200 px-4">
+      <div class="td-brand-mark">TD</div>
+      @if (!drawerCollapsed) {
+        <div class="min-w-0 flex-1"><strong class="block truncate">{{ 'app.name' | text }}</strong><p class="truncate text-xs text-slate-500">{{ 'app.subtitle' | text }}</p></div>
+      }
+      <button type="button" class="td-icon-button lg:hidden" [attr.aria-label]="'accessibility.closeNavigation' | text" (click)="mobileNavigationOpen = false">
+        <svg lucideIcon="x" size="20" aria-hidden="true"></svg>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto p-3" aria-label="Primary navigation">
+      @for (group of navigation; track group.labelKey) {
+        <section class="mb-5">
+          @if (!drawerCollapsed) {
+            <h2 class="mb-2 px-3 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-slate-500">{{ group.labelKey | text }}</h2>
+          }
+          <ul class="space-y-1">
+            @for (item of group.items; track item.route) {
+              <li>
+                <a
+                  [routerLink]="item.route"
+                  routerLinkActive="td-nav-active"
+                  class="td-nav-link"
+                  [title]="drawerCollapsed ? (item.labelKey | text) : ''"
+                  (click)="mobileNavigationOpen = false"
+                >
+                  <svg [lucideIcon]="item.icon" size="20" aria-hidden="true"></svg>
+                  @if (!drawerCollapsed) { <span>{{ item.labelKey | text }}</span> }
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </nav>
+
+    <div class="shrink-0 border-t border-slate-200 p-3">
+      <button
+        type="button"
+        class="td-nav-link w-full"
+        [title]="drawerCollapsed ? ('nav.donate' | text) : ''"
+        (click)="openDonation()"
+      >
+        <svg class="td-donate-heart text-red-500" lucideIcon="heart" size="20" aria-hidden="true"></svg>
+        @if (!drawerCollapsed) { <span>{{ 'nav.donate' | text }}</span> }
+      </button>
+    </div>
+
+    <button type="button" class="mx-3 mb-3 hidden items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium lg:flex" [attr.aria-label]="(drawerCollapsed ? 'accessibility.expandNavigation' : 'accessibility.collapseNavigation') | text" (click)="toggleDrawer()">
+      <svg [lucideIcon]="drawerCollapsed ? 'panel-left-open' : 'panel-left-close'" size="20" aria-hidden="true"></svg>
+      @if (!drawerCollapsed) { <span>{{ 'accessibility.collapseNavigation' | text }}</span> }
+    </button>
+  </aside>
+
+  <main id="main-content" class="min-h-dvh p-4 transition-[margin] sm:p-6 lg:p-8" [ngClass]="drawerCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
+    <div class="mx-auto max-w-[1600px]" animate.enter="td-page-enter"><router-outlet /></div>
+  </main>
+</div>
+
+@if (confirmations.request(); as request) {
+  <td-confirmation-dialog
+    [open]="true"
+    [title]="request.titleKey"
+    [message]="request.messageKey"
+    [confirmLabel]="request.confirmLabelKey"
+    [destructive]="request.destructive"
+    (openChange)="!$event && confirmations.resolve(false)"
+    (confirmed)="confirmations.resolve(true)"
+  />
+}

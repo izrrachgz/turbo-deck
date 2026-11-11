@@ -10,7 +10,7 @@ Electron should own the backend process and the renderer trust boundary.
    - `TURBO_DECK_CONTROL_TOKEN`
    - `TURBO_DECK_DATA_DIR`
    - `ASPNETCORE_ENVIRONMENT`
-4. It passes `--Port=0 --ParentPid=<electron-pid>`.
+4. It passes `--ParentPid=<electron-pid>`; a fresh configuration already selects port `0`, while saved fixed ports are honored.
 5. It reads stdout until the backend writes its single readiness JSON record.
 
 Example readiness record:
@@ -29,6 +29,15 @@ The Angular renderer should never receive the backend URL or control token. Elec
 connections and exposes narrow, allow-listed IPC operations through a context-isolated preload. Recommended Electron
 settings are `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, denied permissions, and blocked
 unapproved navigation or webviews.
+
+The visualizer is intentionally different: it runs as a same-origin browser client served by the backend, not inside
+the privileged Electron renderer. A dedicated IPC call opens the fixed local visualizer URL in the default browser.
+The visualizer route has no user or token; its public API and dedicated receive-only hub cannot authorize general API
+or interactive realtime operations. Never expose the control token to the browser.
+
+The live deck follows the same hosted-browser model at the stable `/deck` route. A second dedicated IPC call opens it
+without exposing a credential. Phones and tablets use the configured LAN listener directly; their narrow public API can
+selectively read deck state and trigger enabled cells, while editing and management remain behind normal credentials.
 
 Electron main may attach `Accept-Language` to proxied requests using an allow-listed application locale. The backend
 defaults and falls back to `en-US` and also includes `es-ES`; unsupported or missing translations fall back to English.
@@ -49,3 +58,8 @@ advertised. Discovery publishes `_turbo-deck._tcp` with instance, protocol, hub,
 
 Binding, port, TLS, discovery, and CORS changes return `restartRequired: true`. System configuration, key rotation,
 restart, and shutdown remain loopback-only even while ordinary API and SignalR traffic is exposed to the LAN.
+
+The dedicated LAN-pairing IPC rotates the API key and returns concrete active LAN listeners; Angular generates the QR
+locally. The QR payload contains both endpoint and credential and must never be logged or copied automatically. The
+Windows Firewall IPC accepts only an integer port and `add`/`remove`, launches the fixed packaged helper, and depends on
+an explicit renderer confirmation plus UAC. Electron never runs the helper at startup.

@@ -1,0 +1,51 @@
+.td-autocomplete-field {
+  border-color: var(--td-border);
+  background: var(--td-surface);
+  color: var(--td-text);
+}
+
+.td-autocomplete-field:focus-within {
+  border-color: var(--td-accent);
+  box-shadow: 0 0 0 3px var(--td-focus-soft);
+}
+
+.td-autocomplete-icon-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: .25rem;
+  background: transparent;
+  color: var(--td-text-muted);
+}
+
+.td-autocomplete-icon-button:hover:not(:disabled) { background: var(--td-surface-hover); }
+.td-autocomplete-icon-button:disabled { cursor: not-allowed; opacity: .6; }
+
+.td-autocomplete-panel {
+  border-color: var(--td-border);
+  background: var(--td-surface);
+  color: var(--td-text-secondary);
+  box-shadow: 0 12px 28px var(--td-shadow);
+}
+
+.td-autocomplete-option {
+  border-color: var(--td-border);
+  color: var(--td-text-secondary);
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.td-autocomplete-option-alt { background: var(--td-surface-muted); }
+.td-autocomplete-option:hover, .td-autocomplete-option-active { background: var(--td-surface-hover); }
+.td-autocomplete-option-selected {
+  background: var(--td-accent-soft);
+  color: var(--td-accent-text);
+  font-weight: 500;
+  box-shadow: inset 3px 0 var(--td-accent);
+}
+
+.td-autocomplete-option-selected:hover,
+.td-autocomplete-option-selected.td-autocomplete-option-active { background: var(--td-accent-soft); }

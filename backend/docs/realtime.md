@@ -9,6 +9,11 @@ optional expiration. The server stamps the trusted origin and creation time.
 
 Files are uploaded through `/files`; realtime messages carry file IDs rather than file bytes.
 
+Playback events target the `playback` group. Public connections through `/hubs/visualizer` and `/hubs/deck-explorer`
+are joined to this group by the server and cannot send messages, join or leave groups, dispatch server requests, or
+list connected clients. Any number of visualizer and live-deck clients observe the same backend-owned transient queue.
+Trusted control-token and LAN-key clients retain the generic `/hubs/realtime` transport behavior.
+
 ## Server commands and queries
 
 Only `Command` and `Query` messages can target the server. A name must have one explicitly registered
@@ -24,6 +29,14 @@ Loopback supervisors can send the control token as a header or SignalR `access_t
 LAN API key. Browser SignalR clients necessarily use a query token for WebSockets or server-sent events, so normal LAN
 operation requires HTTPS and query strings must not be logged. Browser origins must also appear in the explicit CORS
 allowlist.
+
+The fixed visualizer page, `/api/v1/visualizer/*`, and `/hubs/visualizer` require no credential. This narrow public
+surface exists so browser playback permission can remain associated with one stable origin. It does not authorize
+general API requests or interactive realtime operations.
+
+The fixed `/deck` page, `/api/v1/deck-explorer/*`, and `/hubs/deck-explorer` also require no credential. The explorer
+surface is limited to deck reads, image thumbnails, queue reads, and enabled-cell triggers. Its browser selection state
+is local to each device; queue state and playback routing remain centralized in the backend.
 
 SignalR uses in-memory routing by default. A Redis backplane can be enabled for a deliberately multi-host deployment;
 multiple devices connected to one backend do not require Redis.

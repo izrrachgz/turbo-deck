@@ -12,6 +12,8 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+    <VisualizerSourceRoot Condition="'$(VisualizerSourceRoot)' == ''">..\..\desktop\dist\turbo-deck-visualizer\browser</VisualizerSourceRoot>
+    <DeckExplorerSourceRoot Condition="'$(DeckExplorerSourceRoot)' == ''">..\..\desktop\dist\turbo-deck-explorer\browser</DeckExplorerSourceRoot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +25,20 @@
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.Debug" />
     <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(VisualizerSourceRoot)')">
+    <Content Include="$(VisualizerSourceRoot)\**\*"
+             Link="wwwroot\visualizer\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(DeckExplorerSourceRoot)')">
+    <Content Include="$(DeckExplorerSourceRoot)\**\*"
+             Link="wwwroot\deck\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -29,8 +29,13 @@ internal static class BackendBootstrap
         if (!string.IsNullOrWhiteSpace(controlToken))
             derived[$"{ApiConstants.Section}:Security:ControlToken"] = controlToken;
 
+        string networkPortPath = $"{ApiConstants.Section}:Network:Port";
+        int configuredPort = builder.Configuration.GetValue(networkPortPath, ApiConstants.DefaultPort);
         if (int.TryParse(builder.Configuration["Port"], out int commandLinePort))
-            derived[$"{ApiConstants.Section}:Network:Port"] = commandLinePort.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            configuredPort = commandLinePort;
+        if (configuredPort == 0 && !builder.Environment.IsEnvironment("Testing"))
+            configuredPort = ApiConstants.DefaultPort;
+        derived[networkPortPath] = configuredPort.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         string enginePath = $"{ApiConstants.Section}:ConnectionStrings:Engine";
         string databasePath = $"{ApiConstants.Section}:ConnectionStrings:Db";
@@ -94,7 +99,8 @@ internal static class BackendBootstrap
         if (network.Mode == NetworkMode.Loopback)
             return ["127.0.0.1"];
 
-        string[] configured = network.Addresses.Length == 0 ? ["0.0.0.0"] : network.Addresses;
+        string[] normalized = NetworkAddressCatalog.NormalizeDistinct(network.Addresses);
+        string[] configured = normalized.Length == 0 ? ["0.0.0.0"] : normalized;
         bool includesLocalControl = configured.Any(address => address.Trim().ToLowerInvariant() is
             "localhost" or "127.0.0.1" or "::1" or "*" or "+" or "0.0.0.0" or "::");
         return includesLocalControl ? configured : [.. configured, "127.0.0.1"];
@@ -102,15 +108,10 @@ internal static class BackendBootstrap
 
     private static IPAddress ParseAddress(string address)
     {
-        return address.Trim().ToLowerInvariant() switch
-        {
-            "localhost" or "127.0.0.1" => IPAddress.Loopback,
-            "::1" => IPAddress.IPv6Loopback,
-            "*" or "+" or "0.0.0.0" => IPAddress.Any,
-            "::" => IPAddress.IPv6Any,
-            _ when IPAddress.TryParse(address, out IPAddress? parsed) => parsed,
-            _ => throw new InvalidOperationException($"Network address '{address}' is not a valid IP address.")
-        };
+        if (NetworkAddressCatalog.TryParse(address, out IPAddress parsed))
+            return parsed;
+
+        throw new InvalidOperationException($"Network address '{address}' is not a valid IP address.");
     }
 
     private static void ConfigureHttps(ListenOptions listen, HttpsOptions https)

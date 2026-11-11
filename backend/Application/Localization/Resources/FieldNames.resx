@@ -12,9 +12,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
+  <data name="Animation_Duration" xml:space="preserve"><value>Animation Duration</value></data>
   <data name="Content_Type" xml:space="preserve">
     <value>Content Type</value>
   </data>
+  <data name="Display_Name" xml:space="preserve"><value>Display Name</value></data>
+  <data name="Display_Duration" xml:space="preserve"><value>Display Duration</value></data>
+  <data name="Column" xml:space="preserve"><value>Column</value></data>
   <data name="File" xml:space="preserve">
     <value>File</value>
   </data>
@@ -30,13 +34,23 @@
   <data name="Limit" xml:space="preserve">
     <value>Limit</value>
   </data>
+  <data name="Label" xml:space="preserve"><value>Label</value></data>
   <data name="Maximum_File_Size" xml:space="preserve">
     <value>Maximum File Size</value>
   </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="Palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="Pitch_Semitones" xml:space="preserve"><value>Pitch Semitones</value></data>
+  <data name="Playback_Rate" xml:space="preserve"><value>Playback Rate</value></data>
   <data name="Purpose" xml:space="preserve">
     <value>Purpose</value>
   </data>
+  <data name="Queue Capacity" xml:space="preserve"><value>Queue Capacity</value></data>
+  <data name="Queue_Priority" xml:space="preserve"><value>Queue Priority</value></data>
+  <data name="Row" xml:space="preserve"><value>Row</value></data>
+  <data name="Time Zone" xml:space="preserve"><value>Time Zone</value></data>
+  <data name="Visualizer Safe Margin" xml:space="preserve"><value>Visualizer Safe Margin</value></data>
+  <data name="Volume" xml:space="preserve"><value>Volume</value></data>
 </root>

@@ -1,0 +1,65 @@
+<header class="mb-6"><p class="td-eyebrow">{{ 'nav.connectivity' | text }}</p><h1 class="td-page-title">{{ 'network.title' | text }}</h1><p class="td-page-description">{{ 'network.description' | text }}</p></header>
+@if (error()) { <p class="td-alert td-alert-danger">{{ error() }}</p> }
+@if (notice()) { <p class="td-alert td-alert-success">{{ notice() }}</p> }
+
+<section class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="grid gap-4 md:grid-cols-2">
+    <label class="text-sm font-medium text-slate-700">{{ 'network.mode' | text }}<select class="td-field mt-1.5" [(ngModel)]="mode"><option [ngValue]="0">{{ 'network.loopback' | text }}</option><option [ngValue]="1">{{ 'network.lan' | text }}</option></select></label>
+    <label class="text-sm font-medium text-slate-700">{{ 'network.port' | text }}<input class="td-field mt-1.5" type="number" min="1" max="65535" [(ngModel)]="port" /></label>
+    <div class="md:col-span-2">
+      <div class="flex items-center justify-between gap-3"><span class="text-sm font-medium text-slate-700">{{ 'network.addresses' | text }}</span><button type="button" class="td-button-secondary" (click)="openAddressDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageAddresses' | text }}</button></div>
+      <div class="mt-1.5 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
+        @for (address of addresses; track address) { <span class="rounded bg-slate-200 px-2 py-1 font-mono text-xs text-slate-800">{{ address }}</span> }
+      </div>
+      <p class="mt-1.5 text-xs text-slate-500">{{ 'network.addressesHelp' | text }}</p>
+    </div>
+    <label class="text-sm font-medium text-slate-700">{{ 'network.instanceName' | text }}<input class="td-field mt-1.5" maxlength="100" [(ngModel)]="instanceName" /></label>
+    <label class="flex items-center gap-2 self-end pb-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="discoveryEnabled" /> {{ 'network.discovery' | text }}</label>
+    <label class="text-sm font-medium text-slate-700 md:col-span-2">{{ 'network.corsOrigins' | text }}<textarea class="td-field mt-1.5 min-h-20 font-mono text-xs" [(ngModel)]="corsAllowedOrigins"></textarea></label>
+    <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="httpsEnabled" /> {{ 'network.https' | text }}</label>
+    <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="allowInsecureHttp" /> {{ 'network.insecureHttp' | text }}</label>
+    @if (httpsEnabled) { <label class="text-sm font-medium text-slate-700">{{ 'network.certificatePath' | text }}<input class="td-field mt-1.5" [(ngModel)]="certificatePath" /></label><label class="text-sm font-medium text-slate-700">{{ 'network.certificatePassword' | text }}<input class="td-field mt-1.5" type="password" [(ngModel)]="certificatePassword" placeholder="Leave blank to keep current" /></label> }
+  </div>
+  <div class="mt-5 flex flex-wrap gap-2"><button type="button" class="td-button-primary" (click)="restartDialogOpen.set(true)">{{ 'network.saveRestart' | text }}</button><button type="button" class="td-button-secondary" (click)="load()">{{ 'action.refresh' | text }}</button></div>
+</section>
+
+<section class="mt-6 grid gap-6 lg:grid-cols-2">
+  <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm"><h2 class="font-semibold text-slate-950">{{ 'network.mobileTitle' | text }}</h2><p class="mt-1 text-sm text-slate-600">{{ 'network.mobileDescription' | text }}</p><button type="button" class="td-button-primary mt-4" (click)="lanDialogOpen.set(true)">{{ 'network.generatePairing' | text }}</button>@if (lanAccess(); as pairing) { <div class="mt-4 grid justify-items-center gap-3"><img class="size-64" [src]="pairing.qr" alt="LAN pairing QR code" /><input class="td-field font-mono text-xs" readonly [value]="pairing.url" (focus)="$any($event.target).select()" /><p class="text-xs text-amber-700">{{ 'network.pairingWarning' | text }}</p></div> }</div>
+  <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm"><h2 class="font-semibold text-slate-950">{{ 'network.firewallTitle' | text }}</h2><p class="mt-1 text-sm text-slate-600">{{ 'network.firewallDescription' | text }}</p><div class="mt-4 flex gap-2"><button type="button" class="td-button-primary" [disabled]="port < 1" (click)="confirmFirewall('add')">{{ 'network.firewallAdd' | text }}</button><button type="button" class="td-button-secondary" [disabled]="port < 1" (click)="confirmFirewall('remove')">{{ 'network.firewallRemove' | text }}</button></div></div>
+</section>
+
+<section class="mt-6 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+  <h2 class="font-semibold text-slate-950">{{ 'network.hostedClientsTitle' | text }}</h2>
+  <p class="mt-1 text-sm text-slate-600">{{ 'network.hostedClientsDescription' | text }}</p>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button type="button" class="td-button-primary" (click)="openVisualizer()"><svg lucideIcon="monitor-smartphone" size="16" aria-hidden="true"></svg>{{ 'network.openVisualizer' | text }}</button>
+    <button type="button" class="td-button-secondary" (click)="openDeckExplorer()"><svg lucideIcon="layout-grid" size="16" aria-hidden="true"></svg>{{ 'network.openDeckExplorer' | text }}</button>
+  </div>
+</section>
+
+<td-confirmation-dialog [open]="restartDialogOpen()" (openChange)="restartDialogOpen.set($event)" title="network.restartTitle" confirmLabel="network.saveRestart" icon="rotate-cw" [processing]="saving()" (confirmed)="saveAndRestart()"><p>{{ 'network.restartMessage' | text }}</p></td-confirmation-dialog>
+<td-confirmation-dialog [open]="lanDialogOpen()" (openChange)="lanDialogOpen.set($event)" title="network.pairingTitle" confirmLabel="network.generatePairing" icon="qr-code" [destructive]="true" (confirmed)="createLanPairing()"><p>{{ 'network.pairingMessage' | text }}</p></td-confirmation-dialog>
+<td-confirmation-dialog [open]="firewallDialogOpen()" (openChange)="firewallDialogOpen.set($event)" title="network.firewallConfirmTitle" confirmLabel="action.confirm" icon="shield" [processing]="applyingFirewall()" (confirmed)="applyFirewall()"><p>{{ 'network.firewallConfirmMessage' | text }}</p></td-confirmation-dialog>
+<td-confirmation-dialog [open]="addressDialogOpen()" (openChange)="addressDialogOpen.set($event)" title="network.addressDialogTitle" confirmLabel="action.save" icon="radio" [confirmDisabled]="addressEditorInvalid()" (confirmed)="saveAddresses()">
+  <p class="mb-4 text-sm text-slate-600">{{ 'network.addressDialogDescription' | text }}</p>
+  <div class="grid gap-3">
+    @for (address of addressDraft; track $index; let index = $index) {
+      <div>
+        <label [for]="'listener-address-' + index" class="text-xs font-medium text-slate-600">{{ 'network.address' | text }} {{ index + 1 }}</label>
+        <div class="mt-1 flex">
+          <input [id]="'listener-address-' + index" class="td-field min-w-0 rounded-r-none font-mono text-sm" [class.border-red-500]="addressError(index)" [(ngModel)]="addressDraft[index]" placeholder="192.168.1.20" />
+          <button type="button" class="td-button-secondary -ml-px shrink-0 rounded-l-none px-3" [attr.aria-label]="'network.removeAddress' | text" (click)="removeAddress(index)"><svg lucideIcon="trash-2" size="16" aria-hidden="true"></svg></button>
+        </div>
+        @if (addressErrorKey(index); as errorKey) { <p class="mt-1 text-xs text-red-700">{{ errorKey | text }}</p> }
+      </div>
+    }
+  </div>
+  <button type="button" class="td-button-secondary mt-3" (click)="addAddress()"><svg lucideIcon="plus" size="16" aria-hidden="true"></svg>{{ 'network.addAddress' | text }}</button>
+  <div class="mt-5 border-t border-slate-200 pt-4">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ 'network.suggestedAddresses' | text }}</p>
+    <div class="mt-2 flex flex-wrap gap-2">
+      @for (address of suggestedAddresses; track address) { <button type="button" class="td-button-secondary font-mono text-xs" [disabled]="suggestionDisabled(address)" (click)="addAddress(address)"><svg lucideIcon="plus" size="14" aria-hidden="true"></svg>{{ address }}</button> }
+    </div>
+    <p class="mt-2 text-xs text-slate-500">{{ 'network.wildcardHelp' | text }}</p>
+  </div>
+</td-confirmation-dialog>

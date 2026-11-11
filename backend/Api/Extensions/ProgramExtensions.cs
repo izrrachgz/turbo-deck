@@ -2,17 +2,23 @@ using Api.Services;
 using Api.Constants;
 using Api.Middleware;
 using Api.Configuration;
+using Api.Modules.Twitch;
 using Time.Serialization;
 using Api.Modules.Realtime;
 using Application.Extensions;
+using Application.Modules.Twitch;
 using Localization.Configuration;
 using Application.Modules.Realtime;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Application.Migrations.Extensions;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.DataProtection;
 using Application.Infrastructure.Modules.Files;
+using Application.Infrastructure.Modules.Media;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Application.Infrastructure.Modules.Playback;
 
 namespace Api.Extensions;
 
@@ -51,6 +57,7 @@ internal static class ProgramExtensions
         builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.AddUtcDateTimeConverters());
         builder.Services.AddOpenApi();
         builder.Services.AddProblemDetails();
+        builder.Services.AddHttpClient();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
         builder.Services.AddCors(options => options.AddDefaultPolicy(policy => ConfigureCors(policy, api)));
 
@@ -65,13 +72,25 @@ internal static class ProgramExtensions
 
         builder.Services.ConfigureApplicationServices(api);
         builder.Services.AddFileInfrastructure(api);
+        builder.Services.AddMediaInfrastructure();
+        builder.Services.AddPlaybackInfrastructure();
         builder.Services.AddApplicationMigrations();
 
         builder.Services.AddSingleton<ISecurityTokenService, SecurityTokenService>();
         builder.Services.AddSingleton<IBackendSettingsStore, BackendSettingsStore>();
         builder.Services.AddSingleton<IRealtimeConnectionRegistry, RealtimeConnectionRegistry>();
         builder.Services.AddSingleton<IRealtimePublisher, SignalRRealtimePublisher>();
+        string twitchKeyDirectory = Path.Combine(runtime.DataDirectory, "Twitch", "keys");
+        IDataProtectionBuilder dataProtection = builder.Services.AddDataProtection()
+            .SetApplicationName("TurboDeck.Backend")
+            .PersistKeysToFileSystem(new DirectoryInfo(twitchKeyDirectory));
+        if (OperatingSystem.IsWindows())
+            dataProtection.ProtectKeysWithDpapi();
+        builder.Services.AddSingleton<ITwitchTokenStore, TwitchTokenStore>();
+        builder.Services.AddSingleton<TwitchConnectionService>();
+        builder.Services.AddSingleton<ITwitchConnection>(services => services.GetRequiredService<TwitchConnectionService>());
         builder.Services.AddHostedService<ApiStartupInitializationService>();
+        builder.Services.AddHostedService(services => services.GetRequiredService<TwitchConnectionService>());
         builder.Services.AddHostedService<ParentProcessLifetimeService>();
         builder.Services.AddHostedService<DiscoveryHostedService>();
     }
@@ -90,8 +109,24 @@ internal static class ProgramExtensions
         });
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<ApiAccessMiddleware>();
+        string webRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        if (Directory.Exists(webRoot))
+        {
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(webRoot)
+            });
+            string visualizerIndex = Path.Combine(webRoot, "visualizer", "index.html");
+            if (File.Exists(visualizerIndex))
+                app.MapGet(ApiConstants.VisualizerPath, () => Results.File(visualizerIndex, "text/html"));
+            string deckExplorerIndex = Path.Combine(webRoot, "deck", "index.html");
+            if (File.Exists(deckExplorerIndex))
+                app.MapGet(ApiConstants.DeckExplorerPath, () => Results.File(deckExplorerIndex, "text/html"));
+        }
         app.MapControllers();
         app.MapHub<RealtimeHub>(ApiConstants.RealtimeHubPath);
+        app.MapHub<RealtimeHub>(ApiConstants.VisualizerHubPath);
+        app.MapHub<RealtimeHub>(ApiConstants.DeckExplorerHubPath);
         if (app.Environment.IsDevelopment())
             app.MapOpenApi();
     }

@@ -1,0 +1,99 @@
+<label [id]="labelId" [for]="inputId" class="block text-sm font-medium text-slate-700" [class.sr-only]="labelVisuallyHidden">{{ label }}</label>
+<div class="relative" [class.mt-1.5]="!labelVisuallyHidden">
+  <span class="td-autocomplete-field flex min-h-11 items-center gap-2 rounded-md border px-3 transition">
+    @if (prefixIcon) {
+      <svg [lucideIcon]="prefixIcon" class="size-4 shrink-0 text-slate-500" aria-hidden="true"></svg>
+    }
+    <input
+      #selectInput
+      [id]="inputId"
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      aria-autocomplete="list"
+      [readOnly]="!searchable"
+      [attr.aria-activedescendant]="activeDescendant"
+      [attr.aria-controls]="listId"
+      [attr.aria-expanded]="open"
+      [attr.aria-labelledby]="labelId"
+      [attr.placeholder]="placeholder || null"
+      [value]="displayText"
+      [attr.maxlength]="maxLength ?? null"
+      [attr.inputmode]="inputMode ?? null"
+      [disabled]="disabled"
+      class="min-w-0 flex-1 border-0 bg-transparent py-2 text-sm outline-none placeholder:text-slate-400 read-only:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+      (input)="handleInput($event)"
+      (focus)="handleFocus()"
+      (click)="handleClick()"
+      (blur)="handleBlur()"
+      (keydown)="handleKeydown($event)"
+    />
+    @if (clearable && hasClearableValue) {
+      <button
+        type="button"
+        [disabled]="disabled"
+        [attr.aria-label]="'action.clear' | text"
+        [title]="'action.clear' | text"
+        class="td-autocomplete-icon-button"
+        (mousedown)="$event.preventDefault()"
+        (click)="clearSelection($event)"
+      >
+        <svg lucideIcon="x" class="size-4" aria-hidden="true"></svg>
+      </button>
+    }
+    <button
+      type="button"
+      tabindex="-1"
+      [disabled]="disabled"
+      [attr.aria-label]="label"
+      [attr.aria-expanded]="open"
+      [attr.aria-controls]="listId"
+      class="td-autocomplete-icon-button"
+      (mousedown)="$event.preventDefault()"
+      (click)="toggleList($event)"
+    >
+      <svg lucideIcon="chevron-down" class="size-4 transition-transform" [class.rotate-180]="open" aria-hidden="true"></svg>
+    </button>
+  </span>
+
+  @if (open) {
+    <div class="td-autocomplete-panel absolute z-30 mt-1 w-full overflow-hidden rounded-md border shadow-lg" (mousedown)="handlePanelMouseDown($event)">
+      @if (filteredOptions.length) {
+        <cdk-virtual-scroll-viewport
+          [id]="listId"
+          role="listbox"
+          [attr.aria-labelledby]="labelId"
+          [itemSize]="optionHeight"
+          [style.height.px]="viewportHeight"
+          class="w-full"
+        >
+          <div
+            *cdkVirtualFor="let option of filteredOptions; let index = index; trackBy: trackOption"
+            role="option"
+            [id]="listId + '-option-' + index"
+            [attr.aria-selected]="isSelected(option)"
+            [attr.aria-disabled]="option.disabled || null"
+            class="td-autocomplete-option flex h-12 items-center gap-2 border-b px-3 text-sm"
+            [class.cursor-pointer]="!option.disabled"
+            [class.cursor-not-allowed]="option.disabled"
+            [class.opacity-50]="option.disabled"
+            [class.td-autocomplete-option-alt]="index % 2 === 1"
+            [class.td-autocomplete-option-active]="index === activeIndex"
+            [class.td-autocomplete-option-selected]="isSelected(option)"
+            (mouseenter)="setActiveOption(index)"
+            (mousedown)="$event.preventDefault()"
+            (click)="selectOption(option)"
+          >
+            <span class="flex size-4 shrink-0 items-center justify-center" aria-hidden="true">
+              @if (isSelected(option)) { <svg lucideIcon="check" class="size-4" stroke-width="2.5"></svg> }
+            </span>
+            @if (option.icon) { <svg [lucideIcon]="option.icon" class="size-4 shrink-0" aria-hidden="true"></svg> }
+            <span class="truncate" [title]="option.label">{{ option.label }}</span>
+          </div>
+        </cdk-virtual-scroll-viewport>
+      } @else {
+        <p [id]="listId" role="status" class="px-3 py-4 text-sm text-slate-500">{{ noResultsText }}</p>
+      }
+    </div>
+  }
+</div>

@@ -1,5 +1,5 @@
 # Domain
 
-Infrastructure-free entity abstractions and domain models. The base contains `BaseEntity<TKey>` and the account-neutral
-`StoredFile` metadata entity. Domain intentionally has no test project because it currently contains only structural
-contracts and data classes.
+Infrastructure-free entity abstractions and domain models. The solution contains `BaseEntity<TKey>`, account-neutral
+`StoredFile` metadata, deck profiles/pages/cells, media assets, and application settings. Domain intentionally has no
+test project because it contains only structural contracts and data classes.

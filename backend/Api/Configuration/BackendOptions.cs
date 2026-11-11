@@ -12,7 +12,7 @@ internal sealed class NetworkOptions
 
     public string[] Addresses { get; init; } = ["127.0.0.1"];
 
-    public int Port { get; init; }
+    public int Port { get; init; } = Api.Constants.ApiConstants.DefaultPort;
 
     public bool DiscoveryEnabled { get; init; }
 
@@ -43,6 +43,7 @@ internal sealed class SecurityOptions
     public string LanApiKeySalt { get; init; } = string.Empty;
 
     public string LanApiKeyHash { get; init; } = string.Empty;
+
 }
 
 internal sealed class FilesOptions

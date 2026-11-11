@@ -17,8 +17,10 @@
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "inlineStyleLanguage": "scss",
-            "styles": ["src/styles.scss"]
+            "inlineStyleLanguage": "css",
+            "assets": [{ "glob": "**/*", "input": "src/assets", "output": "assets" }],
+            "allowedCommonJsDependencies": ["automation-events", "qrcode"],
+            "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {
@@ -34,6 +36,12 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "electron": {
+              "outputPath": "dist-dev/turbo-deck-ui",
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -45,6 +53,100 @@
             "development": { "buildTarget": "turbo-deck-ui:build:development" }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "turbo-deck-ui:build:development",
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "include": ["src/**/*.spec.ts"]
+          }
+        }
+      }
+    },
+    "turbo-deck-visualizer": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "td",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/turbo-deck-visualizer",
+            "index": { "input": "src/visualizer.html", "output": "index.html" },
+            "browser": "src/visualizer-main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [{ "glob": "**/*", "input": "src/assets", "output": "assets" }],
+            "allowedCommonJsDependencies": ["automation-events", "qrcode"],
+            "styles": ["src/styles.css"]
+          },
+          "configurations": {
+            "production": {
+              "baseHref": "/visualizer/",
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": { "minify": true, "inlineCritical": false },
+                "fonts": true
+              },
+              "budgets": [
+                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        }
+      }
+    },
+    "turbo-deck-explorer": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "td",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/turbo-deck-explorer",
+            "index": { "input": "src/deck.html", "output": "index.html" },
+            "browser": "src/deck-main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "css",
+            "assets": [{ "glob": "**/*", "input": "src/assets", "output": "assets" }],
+            "styles": ["src/styles.css"]
+          },
+          "configurations": {
+            "production": {
+              "baseHref": "/deck/",
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": { "minify": true, "inlineCritical": false },
+                "fonts": true
+              },
+              "budgets": [
+                { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" },
+                { "type": "anyComponentStyle", "maximumWarning": "8kB", "maximumError": "16kB" }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
         }
       }
     }

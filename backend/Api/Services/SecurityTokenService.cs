@@ -1,7 +1,7 @@
+using System.Text;
 using Api.Configuration;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Api.Services;
 
@@ -65,10 +65,8 @@ internal sealed class SecurityTokenService : ISecurityTokenService
 
     public GeneratedLanApiKey GenerateLanApiKey()
     {
-        string plaintext = ToBase64Url(RandomNumberGenerator.GetBytes(32));
-        byte[] salt = RandomNumberGenerator.GetBytes(16);
-        byte[] hash = Rfc2898DeriveBytes.Pbkdf2(plaintext, salt, Iterations, HashAlgorithmName.SHA256, DerivedKeySize);
-        return new GeneratedLanApiKey(plaintext, Convert.ToBase64String(salt), Convert.ToBase64String(hash));
+        (string plaintext, string salt, string hash) = GenerateToken();
+        return new GeneratedLanApiKey(plaintext, salt, hash);
     }
 
     public void SetLanKey(string salt, string hash)
@@ -78,6 +76,14 @@ internal sealed class SecurityTokenService : ISecurityTokenService
             _lanSalt = TryDecode(salt);
             _lanHash = TryDecode(hash);
         }
+    }
+
+    private static (string Plaintext, string Salt, string Hash) GenerateToken()
+    {
+        string plaintext = ToBase64Url(RandomNumberGenerator.GetBytes(32));
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        byte[] hash = Rfc2898DeriveBytes.Pbkdf2(plaintext, salt, Iterations, HashAlgorithmName.SHA256, DerivedKeySize);
+        return (plaintext, Convert.ToBase64String(salt), Convert.ToBase64String(hash));
     }
 
     private static bool FixedTimeEquals(byte[] expected, byte[] actual) =>

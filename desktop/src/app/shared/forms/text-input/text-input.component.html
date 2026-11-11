@@ -1,0 +1,12 @@
+<label [for]="inputId" class="mb-1.5 block text-sm font-medium text-slate-700">{{ label }}</label>
+<input
+  [id]="inputId"
+  type="text"
+  class="td-field"
+  [value]="value"
+  [placeholder]="placeholder"
+  [maxLength]="maxLength ?? null"
+  [disabled]="disabled"
+  (input)="handleInput($event)"
+  (blur)="markTouched()"
+/>

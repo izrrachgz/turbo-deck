@@ -1,0 +1,69 @@
+<main class="live-deck-shell">
+  <header class="live-deck-header">
+    <div class="brand">
+      <span class="brand-mark">TD</span>
+      <div class="brand-copy"><strong>Turbo Deck</strong><span>Live deck</span></div>
+    </div>
+    <div class="connection" [class.connection-live]="connected()">
+      <span aria-hidden="true"></span>{{ connected() ? 'Live' : 'Polling' }}
+    </div>
+  </header>
+
+  @if (error()) { <p class="deck-alert" role="alert">{{ error() }}</p> }
+
+  <section class="deck-toolbar" aria-label="Deck selection">
+    <label>
+      <span>Profile</span>
+      <select [ngModel]="selectedProfileId" (ngModelChange)="selectProfile($event)" [disabled]="!profiles().length">
+        @for (profile of profiles(); track profile.id) { <option [ngValue]="profile.id">{{ profile.name }}</option> }
+      </select>
+    </label>
+    <div class="queue-status" aria-live="polite">
+      @if (queue().current; as current) {
+        <span>Now playing</span><strong>{{ current.label }}</strong><small>{{ queue().pending.length }} pending</small>
+      } @else {
+        <span>Playback queue</span><strong>Ready</strong><small>{{ queue().pending.length }} pending</small>
+      }
+    </div>
+  </section>
+
+  @if (loading()) {
+    <section class="deck-empty">Loading deck…</section>
+  } @else if (!profiles().length) {
+    <section class="deck-empty">Create a profile in Turbo Deck on the PC to begin.</section>
+  } @else if (!pages().length) {
+    <section class="deck-empty">This profile does not have any pages.</section>
+  } @else {
+    <section class="deck-surface">
+      <div class="deck-grid" aria-label="Live deck cells">
+        @for (slot of slots(); track slot.rowIndex + ':' + slot.columnIndex) {
+          <button
+            type="button"
+            class="deck-cell"
+            [class.deck-cell-current]="cellState(slot.cell) === 'current'"
+            [class.deck-cell-queued]="cellState(slot.cell) === 'queued'"
+            [class.deck-cell-empty]="!canTrigger(slot.cell)"
+            [disabled]="!canTrigger(slot.cell) || triggeringCellId() !== null"
+            [attr.aria-label]="slot.cell?.label || 'Empty cell'"
+            (click)="trigger(slot.cell)">
+            @if (slot.cell; as cell) {
+              @if (thumbnailUrl(cell); as thumbnail) { <img [src]="thumbnail" alt="" /> }
+              <span class="cell-shade"></span>
+              <span class="cell-label">{{ cell.label || 'Untitled' }}</span>
+              @if (cellState(cell) === 'current') { <span class="cell-badge">Playing</span> }
+              @else if (cellState(cell) === 'queued') { <span class="cell-badge">Queued</span> }
+            }
+          </button>
+        }
+      </div>
+
+      <nav class="page-strip" aria-label="Deck pages">
+        @for (page of pages(); track page.id) {
+          <button type="button" [class.page-active]="page.id === selectedPageId" (click)="selectPage(page.id)">
+            {{ page.position }}
+          </button>
+        }
+      </nav>
+    </section>
+  }
+</main>
