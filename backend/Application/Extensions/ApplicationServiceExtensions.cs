@@ -12,12 +12,18 @@ namespace Application.Extensions;
 
 public static class ApplicationServiceExtensions
 {
-    public static IServiceCollection ConfigureApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection ConfigureApplicationServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        bool registerPersistence = true)
     {
         services.AddCqrs();
         services.AddTimeServices();
-        services.AddRepositories(configuration);
-        services.AddCommandRunners(configuration);
+        if (registerPersistence)
+        {
+            services.AddRepositories(configuration);
+            services.AddCommandRunners(configuration);
+        }
         services.AddApplicationModules();
         services
             .AddCommandQLocalization(configuration.GetSection("Localization"))

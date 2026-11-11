@@ -31,6 +31,13 @@ The backend remains independently usable by other trusted hosts. Loopback mode i
 persistent API key and HTTPS unless insecure HTTP is deliberately enabled. System configuration and lifecycle routes
 remain loopback-only.
 
+Database selection is a loopback-only host concern. Angular uses the Electron request allowlist to read provider
+status, test a candidate connection, and request a confirmed switch. The API creates scoped repositories through the
+active runtime provider factory, so later requests use the newly selected SqlKata compiler without a process restart.
+Stored connection strings are encrypted and never cross back into the renderer. A switch becomes active only after
+connection preflight, schema ownership validation, and pending migrations succeed; data in inactive engines is left
+untouched.
+
 ## Source boundaries
 
 - `backend/Api`: process hosting, HTTP, SignalR, discovery, credentials, lifecycle, culture selection, and Serilog setup.

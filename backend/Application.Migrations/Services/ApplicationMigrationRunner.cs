@@ -107,8 +107,14 @@ namespace Application.Migrations.Services
                     await connection.OpenAsync(cancellationToken);
                 }
 
+                string migrationSql = script.Content;
+                if (repository.Engine == Common.Enumerations.DatabaseEngine.SqLite)
+                    migrationSql = await ApplySqLitePragmasAsync(connection, migrationSql, cancellationToken);
+
+                await using DbTransaction transaction = await connection.BeginTransactionAsync(cancellationToken);
                 await using DbCommand command = connection.CreateCommand();
-                command.CommandText = script.Content;
+                command.CommandText = migrationSql;
+                command.Transaction = transaction;
                 await command.ExecuteNonQueryAsync(cancellationToken);
 
                 // The v1 baseline creates and seeds the ledger itself.
@@ -116,8 +122,11 @@ namespace Application.Migrations.Services
                 {
                     await repository.Db.Query(nameof(MigrationRecord)).InsertAsync(
                         CreateMigrationRecord(script),
+                        transaction: transaction,
                         cancellationToken: cancellationToken);
                 }
+
+                await transaction.CommitAsync(cancellationToken);
 
                 logger.MigrationApplied(script.MigrationId, script.Module, script.Name);
             }
@@ -130,6 +139,26 @@ namespace Application.Migrations.Services
                 logger.MigrationApplyFailed(exception, script.MigrationId, script.Module, script.Name);
                 throw;
             }
+        }
+
+        private static async Task<string> ApplySqLitePragmasAsync(
+            DbConnection connection,
+            string migrationSql,
+            CancellationToken cancellationToken)
+        {
+            string[] lines = migrationSql.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+            string[] pragmas = lines
+                .Where(line => line.TrimStart().StartsWith("PRAGMA ", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            if (pragmas.Length == 0)
+                return migrationSql;
+
+            await using DbCommand pragmaCommand = connection.CreateCommand();
+            pragmaCommand.CommandText = string.Join(Environment.NewLine, pragmas);
+            await pragmaCommand.ExecuteNonQueryAsync(cancellationToken);
+            return string.Join(
+                Environment.NewLine,
+                lines.Where(line => !line.TrimStart().StartsWith("PRAGMA ", StringComparison.OrdinalIgnoreCase)));
         }
 
         private async Task<long> GetLastAppliedMigrationId(CancellationToken cancellationToken)

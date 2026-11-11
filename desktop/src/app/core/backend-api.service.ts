@@ -48,6 +48,36 @@ export interface LanAccessModel {
   baseUrls: string[];
 }
 
+export type DatabaseEngine = 'sqlite' | 'mssql' | 'pgsql' | 'mysql';
+export type DatabaseConnectionStatus = 'Connected' | 'Idle' | 'Unconfigured' | 'Error';
+
+export interface DatabaseEngineStateModel {
+  engine: DatabaseEngine;
+  displayName: string;
+  status: DatabaseConnectionStatus;
+  configured: boolean;
+  connectionSummary?: string | null;
+  lastError?: string | null;
+}
+
+export interface DatabaseSettingsModel {
+  activeEngine: DatabaseEngine;
+  engines: DatabaseEngineStateModel[];
+}
+
+export interface DatabaseConnectionTestModel {
+  success: boolean;
+  status: DatabaseConnectionStatus;
+  message: string;
+  connectionSummary?: string | null;
+}
+
+export interface DatabaseSwitchModel {
+  activeEngine: DatabaseEngine;
+  status: DatabaseConnectionStatus;
+  message: string;
+}
+
 export interface TwitchConnectionStatusModel {
   configured: boolean;
   authorized: boolean;
@@ -245,12 +275,24 @@ export class BackendApiService {
     return this.request('GET', '/system/network');
   }
 
+  getDatabaseSettings(): Promise<DatabaseSettingsModel> {
+    return this.request('GET', '/system/database');
+  }
+
+  testDatabaseConnection(engine: DatabaseEngine, connectionString: string): Promise<DatabaseConnectionTestModel> {
+    return this.request('POST', '/system/database/test', { engine, connectionString: connectionString.trim() || null });
+  }
+
+  switchDatabaseEngine(engine: DatabaseEngine, connectionString: string): Promise<DatabaseSwitchModel> {
+    return this.request('POST', '/system/database/switch', { engine, connectionString: connectionString.trim() || null });
+  }
+
   updateNetwork(settings: UpdateNetworkRequest): Promise<{ restartRequired: boolean }> {
     return this.request('PUT', '/system/network', settings);
   }
 
   restartBackend(): Promise<void> {
-    return this.request('POST', '/system/restart');
+    return window.turboDeck.restartBackend();
   }
 
   createLanAccess(): Promise<LanAccessModel> {

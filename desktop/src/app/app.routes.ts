@@ -41,6 +41,14 @@ export const APP_ROUTES: Routes = [
         data: { titleKey: AppRouteTitleKeys.settings },
       },
       {
+        path: AppRouteSegments.advancedSettings,
+        loadComponent: () =>
+          import('./features/system/advanced-settings/pages/advanced-settings/advanced-settings.page').then(
+            (component) => component.AdvancedSettingsPage,
+          ),
+        data: { titleKey: AppRouteTitleKeys.advancedSettings },
+      },
+      {
         path: AppRouteSegments.docs,
         loadComponent: () =>
           import('./features/system/docs/pages/docs/docs.page').then((component) => component.DocsPage),

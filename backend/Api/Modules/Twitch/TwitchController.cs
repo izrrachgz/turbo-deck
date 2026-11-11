@@ -32,8 +32,23 @@ public sealed class TwitchController(ITwitchConnection twitch, IRequestDispatche
     }
 
     [HttpGet("rewards")]
-    public async Task<ActionResult<IReadOnlyList<TwitchRewardModel>>> GetRewards(CancellationToken cancellationToken) =>
-        Ok(await twitch.GetRewardsAsync(cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<TwitchRewardModel>>> GetRewards(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await twitch.GetRewardsAsync(cancellationToken));
+        }
+        catch (TwitchReauthorizationRequiredException exception)
+        {
+            var problem = new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = exception.Message
+            };
+            problem.Extensions["errorCode"] = "twitch_reauthorization_required";
+            return Conflict(problem);
+        }
+    }
 
     [HttpGet("bindings")]
     public async Task<ActionResult<IReadOnlyList<TwitchRewardBindingModel>>> GetBindings(CancellationToken cancellationToken) =>

@@ -3,6 +3,7 @@
 const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, nativeImage, protocol, shell } = require('electron');
 const { spawn } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
+const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -14,6 +15,7 @@ const { createUpdateService } = require('./update-service');
 const { createDeckExplorerUrl, createVisualizerUrl } = require('./visualizer-url');
 
 const API_CHANNEL = 'backend:request';
+const BACKEND_RESTART_CHANNEL = 'backend:restart';
 const UPLOAD_CHANNEL = 'backend:upload-file';
 const MEDIA_UPLOAD_CHANNEL = 'backend:upload-media';
 const VISUALIZER_OPEN_CHANNEL = 'visualizer:open';
@@ -39,6 +41,7 @@ const API_ROUTE_RULES = Object.freeze({
     /^\/files(?:\?limit=\d{1,3})?$/,
     /^\/files\/\d+$/,
     /^\/system\/network$/,
+    /^\/system\/database$/,
     /^\/api\/v1\/profiles$/,
     /^\/api\/v1\/profiles\/\d+\/pages$/,
     /^\/api\/v1\/pages\/\d+\/grid$/,
@@ -48,8 +51,8 @@ const API_ROUTE_RULES = Object.freeze({
     /^\/api\/v1\/twitch\/(?:status|rewards|bindings)$/
   ],
   POST: [
-    /^\/system\/(?:restart|shutdown)$/,
     /^\/system\/network\/api-key\/rotate$/,
+    /^\/system\/database\/(?:test|switch)$/,
     /^\/api\/v1\/profiles$/,
     /^\/api\/v1\/profiles\/\d+\/pages$/,
     /^\/api\/v1\/playback\/(?:queue|complete|clear)$/,
@@ -93,6 +96,7 @@ let backendUrl;
 let backendAddresses = [];
 let quitting = false;
 const backendToken = randomBytes(32).toString('base64url');
+const backendLifecycle = new EventEmitter();
 
 if (!instanceLock) {
   app.quit();
@@ -235,10 +239,39 @@ async function restartBackend() {
   try {
     await startBackend();
     await startPlaybackRealtime();
-    mainWindow?.webContents.send('backend:restarted');
+    backendLifecycle.emit('restart-completed');
   } catch (error) {
-    showFatalStartupError(error);
+    backendLifecycle.emit('restart-failed', error);
+    console.error(error);
   }
+}
+
+function createBackendRestartWaiter(timeoutMilliseconds = 45_000) {
+  let active = true;
+  let timeout;
+  let completed;
+  let failed;
+  const cleanup = () => {
+    if (!active) return;
+    active = false;
+    clearTimeout(timeout);
+    backendLifecycle.off('restart-completed', completed);
+    backendLifecycle.off('restart-failed', failed);
+  };
+  const promise = new Promise((resolve, reject) => {
+    completed = () => {
+      cleanup();
+      resolve();
+    };
+    failed = error => {
+      cleanup();
+      reject(error instanceof Error ? error : new Error(String(error)));
+    };
+    backendLifecycle.once('restart-completed', completed);
+    backendLifecycle.once('restart-failed', failed);
+    timeout = setTimeout(() => failed(new Error('The backend restart did not finish within 45 seconds.')), timeoutMilliseconds);
+  });
+  return { promise, cancel: cleanup };
 }
 
 async function startPlaybackRealtime() {
@@ -401,6 +434,18 @@ function registerIpcHandlers() {
     const body = request?.body === undefined ? undefined : JSON.stringify(request.body);
     if (body && Buffer.byteLength(body, 'utf8') > MAX_API_REQUEST_BYTES) throw new Error('Backend request is too large.');
     return backendRequest(apiPath, { method, body, headers: body ? { 'Content-Type': 'application/json' } : undefined });
+  });
+
+  ipcMain.handle(BACKEND_RESTART_CHANNEL, async event => {
+    assertTrustedSender(event, mainWindow?.webContents);
+    const waiter = createBackendRestartWaiter();
+    try {
+      await backendRequest('/system/restart', { method: 'POST' });
+      await waiter.promise;
+    } catch (error) {
+      waiter.cancel();
+      throw error;
+    }
   });
 
   ipcMain.handle(UPLOAD_CHANNEL, async (event, request) => {
@@ -609,7 +654,7 @@ async function backendRequest(apiPath, init) {
   let payload;
   try { payload = text ? JSON.parse(text) : undefined; }
   catch { payload = { title: text || `Backend request failed (${response.status}).` }; }
-  if (!response.ok) throw new Error(payload?.title ?? payload?.error ?? `Backend request failed (${response.status}).`);
+  if (!response.ok) throw new Error(payload?.detail ?? payload?.title ?? payload?.error ?? `Backend request failed (${response.status}).`);
   return payload;
 }
 

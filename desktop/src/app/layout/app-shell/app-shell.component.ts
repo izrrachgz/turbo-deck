@@ -48,6 +48,7 @@ export class AppShellComponent {
       labelKey: 'nav.system',
       items: [
         { labelKey: 'nav.settings', icon: 'settings-2', route: AppRoutePaths.settings },
+        { labelKey: 'nav.advancedSettings', icon: 'database-zap', route: AppRoutePaths.advancedSettings },
         { labelKey: 'nav.docs', icon: 'book-open', route: AppRoutePaths.docs },
         { labelKey: 'nav.updates', icon: 'refresh-cw', route: AppRoutePaths.updates },
         { labelKey: 'nav.feedback', icon: 'life-buoy', route: AppRoutePaths.feedback },
@@ -58,6 +59,11 @@ export class AppShellComponent {
 
   mobileNavigationOpen = false;
   drawerCollapsed = false;
+
+  openMobileNavigation(): void {
+    this.drawerCollapsed = false;
+    this.mobileNavigationOpen = true;
+  }
 
   toggleDrawer(): void {
     this.drawerCollapsed = !this.drawerCollapsed;

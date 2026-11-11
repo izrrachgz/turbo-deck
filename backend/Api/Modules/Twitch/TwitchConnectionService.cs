@@ -169,39 +169,58 @@ internal sealed class TwitchConnectionService(
 
     public async Task DisconnectAsync(CancellationToken cancellationToken)
     {
-        TwitchSession? session;
-        lock (_statusGate)
+        await _sessionGate.WaitAsync(CancellationToken.None);
+        try
         {
-            session = _session;
-            _session = null;
-            _pendingAuthorization = null;
-            _connected = false;
-            _lastError = null;
-        }
-        ClientWebSocket? socket = Interlocked.Exchange(ref _activeSocket, null);
-        socket?.Abort();
-        socket?.Dispose();
-        if (session is not null)
-        {
-            try
+            TwitchSession? session;
+            lock (_statusGate)
             {
-                using var request = new HttpRequestMessage(HttpMethod.Post, RevokeUri)
+                session = _session;
+                _session = null;
+                _pendingAuthorization = null;
+                _connected = false;
+                _lastError = null;
+            }
+            ClientWebSocket? socket = Interlocked.Exchange(ref _activeSocket, null);
+            socket?.Abort();
+            socket?.Dispose();
+            if (session is not null)
+            {
+                try
                 {
-                    Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                    using var request = new HttpRequestMessage(HttpMethod.Post, RevokeUri)
                     {
-                        ["client_id"] = session.ClientId,
-                        ["token"] = session.AccessToken
-                    })
-                };
-                using HttpResponseMessage _ = await httpClientFactory.CreateClient().SendAsync(request, cancellationToken);
+                        Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                        {
+                            ["client_id"] = session.ClientId,
+                            ["token"] = session.AccessToken
+                        })
+                    };
+                    using var revokeTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    using HttpResponseMessage response = await httpClientFactory.CreateClient().SendAsync(request, revokeTimeout.Token);
+                    if (!response.IsSuccessStatusCode)
+                        logger.TwitchRevocationFailed($"HTTP {(int)response.StatusCode}");
+                }
+                catch (Exception exception)
+                {
+                    logger.TwitchRevocationFailed(exception.GetType().Name);
+                }
             }
-            catch (HttpRequestException)
+
+            await tokenStore.PurgeAsync(CancellationToken.None);
+            lock (_statusGate)
             {
-                // Local purge is authoritative even when Twitch is unavailable.
+                _session = null;
+                _pendingAuthorization = null;
+                _connected = false;
+                _lastError = null;
             }
+            logger.TwitchDisconnected();
         }
-        await tokenStore.PurgeAsync(cancellationToken);
-        logger.TwitchDisconnected();
+        finally
+        {
+            _sessionGate.Release();
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -235,6 +254,16 @@ internal sealed class TwitchConnectionService(
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
                     break;
+                }
+                catch (TwitchReauthorizationRequiredException exception)
+                {
+                    lock (_statusGate)
+                    {
+                        _connected = false;
+                        _lastError = exception.Message;
+                    }
+                    logger.TwitchConnectionFailed(nameof(TwitchReauthorizationRequiredException));
+                    await _wakeSignal.WaitAsync(stoppingToken);
                 }
                 catch (Exception exception)
                 {
@@ -369,7 +398,16 @@ internal sealed class TwitchConnectionService(
                 })
             };
             using HttpResponseMessage response = await httpClientFactory.CreateClient().SendAsync(request, cancellationToken);
-            await EnsureSuccessAsync(response, cancellationToken);
+            try
+            {
+                await EnsureSuccessAsync(response, cancellationToken);
+            }
+            catch (HttpRequestException exception) when (exception.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
+            {
+                lock (_statusGate)
+                    _lastError = TwitchReauthorizationRequiredException.UserMessage;
+                throw new TwitchReauthorizationRequiredException(exception);
+            }
             using JsonDocument document = await ReadJsonAsync(response, cancellationToken);
             string accessToken = document.RootElement.GetProperty("access_token").GetString()!;
             string refreshToken = document.RootElement.GetProperty("refresh_token").GetString()!;

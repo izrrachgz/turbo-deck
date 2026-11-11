@@ -20,7 +20,8 @@ can list profiles/pages, read configured grids and queue state, fetch image thum
 cannot edit configuration or invoke interactive hub operations. In LAN mode, anyone who can reach the listener can use
 this surface to trigger configured media, so expose the listener only to a trusted local network and prefer HTTPS.
 
-Twitch uses the public-client Device Code flow and never stores a client secret. OAuth access and refresh tokens are
+Twitch uses the public-client Device Code flow and never stores a client secret. The Twitch application must have its
+OAuth Client Type set to Public so Twitch accepts secretless refresh requests. OAuth access and refresh tokens are
 encrypted with a dedicated Data Protection purpose; Windows DPAPI protects the persisted key ring. Disconnect attempts
 Twitch revocation and always deletes the local OAuth artifact, even when Twitch is offline. Never log OAuth responses,
 EventSub payloads, redemption user data, or tokens.

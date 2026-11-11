@@ -1,3 +1,5 @@
+using Common.Enumerations;
+
 namespace Api.Configuration;
 
 public enum NetworkMode
@@ -44,6 +46,13 @@ internal sealed class SecurityOptions
 
     public string LanApiKeyHash { get; init; } = string.Empty;
 
+}
+
+internal sealed class DatabaseOptions
+{
+    public DatabaseEngine Engine { get; init; } = DatabaseEngine.SqLite;
+
+    public string Db { get; init; } = string.Empty;
 }
 
 internal sealed class FilesOptions

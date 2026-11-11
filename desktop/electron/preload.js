@@ -6,6 +6,9 @@ contextBridge.exposeInMainWorld('turboDeck', Object.freeze({
   request(method, path, body) {
     return ipcRenderer.invoke('backend:request', { method, path, body });
   },
+  restartBackend() {
+    return ipcRenderer.invoke('backend:restart');
+  },
   selectAndUploadFile(purpose) {
     return ipcRenderer.invoke('backend:upload-file', { purpose });
   },

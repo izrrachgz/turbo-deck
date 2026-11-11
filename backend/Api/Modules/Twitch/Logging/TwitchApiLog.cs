@@ -19,4 +19,10 @@ internal static partial class TwitchApiLog
 
     [LoggerMessage(TwitchApiEventIds.RedemptionTriggered, LogLevel.Information, "Twitch reward {RewardId} triggered a bound deck cell")]
     public static partial void TwitchRedemptionTriggered(this ILogger logger, string rewardId);
+
+    [LoggerMessage(
+        TwitchApiEventIds.RevocationFailed,
+        LogLevel.Warning,
+        "Twitch token revocation could not be completed ({Reason}); local authorization will still be purged")]
+    public static partial void TwitchRevocationFailed(this ILogger logger, string reason);
 }

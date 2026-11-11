@@ -10,6 +10,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     private readonly string _dataDirectory = Path.Combine(Path.GetTempPath(), $"command-q-api-test-{Guid.NewGuid():N}");
     private readonly string[]? _addresses;
 
+    public string DataDirectory => _dataDirectory;
+
     public ApiFactory(string[]? addresses = null)
     {
         _addresses = addresses;

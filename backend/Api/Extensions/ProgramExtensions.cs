@@ -4,8 +4,10 @@ using Api.Middleware;
 using Api.Configuration;
 using Api.Modules.Twitch;
 using Time.Serialization;
+using Api.Modules.Database;
 using Api.Modules.Realtime;
 using Application.Extensions;
+using Persistence.Abstractions;
 using Application.Modules.Twitch;
 using Localization.Configuration;
 using Application.Modules.Realtime;
@@ -50,6 +52,10 @@ internal static class ProgramExtensions
             .Validate(options => options.MaximumReceiveMessageSizeBytes > 0, "The realtime message limit must be positive.")
             .Validate(options => options.RequestTimeoutSeconds > 0, "The realtime request timeout must be positive.")
             .ValidateOnStart();
+        builder.Services.AddOptions<DatabaseOptions>()
+            .Bind(api.GetSection("ConnectionStrings"))
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Db), "The active database connection string is required.")
+            .ValidateOnStart();
 
         FilesOptions files = api.GetSection("Files").Get<FilesOptions>() ?? new FilesOptions();
         builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = files.MaximumFileSizeBytes + 1024 * 1024);
@@ -70,7 +76,7 @@ internal static class ProgramExtensions
         if (!string.IsNullOrWhiteSpace(realtime.RedisBackplaneConnectionString))
             signalR.AddStackExchangeRedis(realtime.RedisBackplaneConnectionString);
 
-        builder.Services.ConfigureApplicationServices(api);
+        builder.Services.ConfigureApplicationServices(api, registerPersistence: false);
         builder.Services.AddFileInfrastructure(api);
         builder.Services.AddMediaInfrastructure();
         builder.Services.AddPlaybackInfrastructure();
@@ -86,6 +92,12 @@ internal static class ProgramExtensions
             .PersistKeysToFileSystem(new DirectoryInfo(twitchKeyDirectory));
         if (OperatingSystem.IsWindows())
             dataProtection.ProtectKeysWithDpapi();
+        builder.Services.AddSingleton<IDatabaseRepositoryFactory, DatabaseRepositoryFactory>();
+        builder.Services.AddScoped<IWritableRepository>(services =>
+            services.GetRequiredService<IDatabaseRepositoryFactory>().CreateWritable());
+        builder.Services.AddScoped<IReadOnlyRepository>(services =>
+            services.GetRequiredService<IDatabaseRepositoryFactory>().CreateReadOnly());
+        builder.Services.AddSingleton<DatabaseAdministrationService>();
         builder.Services.AddSingleton<ITwitchTokenStore, TwitchTokenStore>();
         builder.Services.AddSingleton<TwitchConnectionService>();
         builder.Services.AddSingleton<ITwitchConnection>(services => services.GetRequiredService<TwitchConnectionService>());

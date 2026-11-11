@@ -27,6 +27,7 @@ export class NetworkPage implements OnInit {
   readonly notice = signal('');
   readonly restartDialogOpen = signal(false);
   readonly saving = signal(false);
+  readonly restartPhase = signal<'saving' | 'restarting'>('saving');
   readonly lanDialogOpen = signal(false);
   readonly lanAccess = signal<{ qr: string; payload: string; url: string } | null>(null);
   readonly firewallDialogOpen = signal(false);
@@ -40,7 +41,7 @@ export class NetworkPage implements OnInit {
   suggestedAddresses = ['localhost', '127.0.0.1', '0.0.0.0'];
   port = 52024;
   discoveryEnabled = false;
-  instanceName = '';
+  readonly instanceName = signal('');
   corsAllowedOrigins = '';
   allowInsecureHttp = false;
   httpsEnabled = false;
@@ -61,7 +62,7 @@ export class NetworkPage implements OnInit {
       this.suggestedAddresses = settings.suggestedAddresses;
       this.port = settings.port;
       this.discoveryEnabled = settings.discoveryEnabled;
-      this.instanceName = settings.instanceName;
+      this.instanceName.set(settings.instanceName);
       this.corsAllowedOrigins = settings.corsAllowedOrigins.join('\n');
       this.allowInsecureHttp = settings.allowInsecureHttp;
       this.httpsEnabled = settings.httpsEnabled;
@@ -74,14 +75,19 @@ export class NetworkPage implements OnInit {
 
   async saveAndRestart(): Promise<void> {
     this.saving.set(true);
+    this.restartPhase.set('saving');
     this.error.set('');
+    this.notice.set('');
     try {
       if (this.mode === 1 && !this.settings()?.lanApiKeyConfigured) await this.api.createLanAccess();
       await this.api.updateNetwork(this.toRequest());
-      this.restartDialogOpen.set(false);
+      this.restartPhase.set('restarting');
       await this.api.restartBackend();
-      this.notice.set('Network settings were saved. The backend is restarting.');
+      await this.load();
+      this.restartDialogOpen.set(false);
+      this.notice.set('Network settings were saved and the backend restarted successfully.');
     } catch (error) {
+      this.restartDialogOpen.set(false);
       this.error.set(this.errorText(error));
     } finally {
       this.saving.set(false);
@@ -191,7 +197,7 @@ export class NetworkPage implements OnInit {
       addresses: this.addresses,
       port: Number(this.port),
       discoveryEnabled: this.discoveryEnabled,
-      instanceName: this.instanceName.trim(),
+      instanceName: this.instanceName().trim(),
       corsAllowedOrigins: this.lines(this.corsAllowedOrigins),
       allowInsecureHttp: this.allowInsecureHttp,
       https: {

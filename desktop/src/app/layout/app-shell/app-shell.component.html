@@ -4,7 +4,7 @@
 
 <div class="min-h-dvh bg-slate-100 text-slate-950">
   <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur lg:hidden">
-    <button type="button" class="td-icon-button" [attr.aria-label]="'accessibility.openNavigation' | text" (click)="mobileNavigationOpen = true">
+    <button type="button" class="td-icon-button" [attr.aria-label]="'accessibility.openNavigation' | text" (click)="openMobileNavigation()">
       <svg lucideIcon="menu" size="20" aria-hidden="true"></svg>
     </button>
     <div class="td-brand-mark">TD</div>
@@ -27,9 +27,11 @@
       @if (!drawerCollapsed) {
         <div class="min-w-0 flex-1"><strong class="block truncate">{{ 'app.name' | text }}</strong><p class="truncate text-xs text-slate-500">{{ 'app.subtitle' | text }}</p></div>
       }
-      <button type="button" class="td-icon-button lg:hidden" [attr.aria-label]="'accessibility.closeNavigation' | text" (click)="mobileNavigationOpen = false">
-        <svg lucideIcon="x" size="20" aria-hidden="true"></svg>
-      </button>
+      @if (mobileNavigationOpen) {
+        <button type="button" class="td-icon-button lg:hidden" [attr.aria-label]="'accessibility.closeNavigation' | text" (click)="mobileNavigationOpen = false">
+          <svg lucideIcon="x" size="20" aria-hidden="true"></svg>
+        </button>
+      }
     </div>
 
     <nav class="flex-1 overflow-y-auto p-3" aria-label="Primary navigation">

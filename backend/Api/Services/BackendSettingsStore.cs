@@ -2,8 +2,10 @@ using Api.Models;
 using Api.Constants;
 using System.Text.Json;
 using Api.Configuration;
+using Common.Enumerations;
 using Microsoft.Extensions.Options;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Api.Services;
 
@@ -15,7 +17,14 @@ public interface IBackendSettingsStore
 
     Task SaveLanApiKeyAsync(GeneratedLanApiKey apiKey, CancellationToken cancellationToken);
 
+    DatabaseConnectionConfiguration GetDatabase(DatabaseEngine engine);
+
+    DatabaseConnectionConfiguration GetActiveDatabase();
+
+    Task SaveDatabaseAsync(DatabaseEngine engine, string connectionString, CancellationToken cancellationToken);
 }
+
+public sealed record DatabaseConnectionConfiguration(DatabaseEngine Engine, string ConnectionString, bool Configured);
 
 internal sealed class BackendSettingsStore : IBackendSettingsStore
 {
@@ -29,15 +38,25 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly NetworkOptions _network;
     private readonly SecurityOptions _security;
+    private readonly DatabaseOptions _database;
+    private readonly IDataProtector _databaseProtector;
+    private readonly object _databaseLock = new();
+    private DatabaseEngine _activeDatabaseEngine;
+    private Dictionary<DatabaseEngine, string> _databaseConnectionStrings;
 
     public BackendSettingsStore(
         BackendRuntime runtime,
         IOptions<NetworkOptions> network,
-        IOptions<SecurityOptions> security)
+        IOptions<SecurityOptions> security,
+        IOptions<DatabaseOptions> database,
+        IDataProtectionProvider dataProtectionProvider)
     {
         _settingsPath = runtime.SettingsPath;
         _network = network.Value;
         _security = security.Value;
+        _database = database.Value;
+        _databaseProtector = dataProtectionProvider.CreateProtector("TurboDeck.Database.ConnectionStrings.v1");
+        (_activeDatabaseEngine, _databaseConnectionStrings) = LoadDatabaseSettings();
     }
 
     public NetworkSettingsResponse GetNetwork() => new(
@@ -107,6 +126,48 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         }
     }
 
+    public DatabaseConnectionConfiguration GetDatabase(DatabaseEngine engine)
+    {
+        lock (_databaseLock)
+        {
+            bool configured = _databaseConnectionStrings.TryGetValue(engine, out string? connectionString) &&
+                !string.IsNullOrWhiteSpace(connectionString);
+            return new DatabaseConnectionConfiguration(engine, connectionString ?? string.Empty, configured);
+        }
+    }
+
+    public DatabaseConnectionConfiguration GetActiveDatabase()
+    {
+        lock (_databaseLock)
+        {
+            bool configured = _databaseConnectionStrings.TryGetValue(_activeDatabaseEngine, out string? connectionString) &&
+                !string.IsNullOrWhiteSpace(connectionString);
+            return new DatabaseConnectionConfiguration(_activeDatabaseEngine, connectionString ?? string.Empty, configured);
+        }
+    }
+
+    public async Task SaveDatabaseAsync(DatabaseEngine engine, string connectionString, CancellationToken cancellationToken)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            PersistedBackendSettings settings = await ReadAsync(cancellationToken);
+            settings.Api.Database.ActiveEngine = engine.ToString();
+            settings.Api.Database.ProtectedConnectionStrings[engine.ToString()] = _databaseProtector.Protect(connectionString);
+            await WriteAsync(settings, cancellationToken);
+
+            lock (_databaseLock)
+            {
+                _activeDatabaseEngine = engine;
+                _databaseConnectionStrings[engine] = connectionString;
+            }
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     private async Task<PersistedBackendSettings> ReadAsync(CancellationToken cancellationToken)
     {
         if (File.Exists(_settingsPath))
@@ -129,9 +190,57 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
                 {
                     LanApiKeySalt = _security.LanApiKeySalt,
                     LanApiKeyHash = _security.LanApiKeyHash
-                }
+                },
+                Database = CreatePersistedDatabaseSettings()
             }
         };
+    }
+
+    private (DatabaseEngine ActiveEngine, Dictionary<DatabaseEngine, string> ConnectionStrings) LoadDatabaseSettings()
+    {
+        var connectionStrings = new Dictionary<DatabaseEngine, string>();
+        if (!string.IsNullOrWhiteSpace(_database.Db))
+            connectionStrings[_database.Engine] = _database.Db;
+
+        if (!File.Exists(_settingsPath))
+            return (_database.Engine, connectionStrings);
+
+        try
+        {
+            string json = File.ReadAllText(_settingsPath);
+            PersistedBackendSettings? settings = JsonSerializer.Deserialize<PersistedBackendSettings>(json, SerializerOptions);
+            if (settings is null)
+                return (_database.Engine, connectionStrings);
+
+            foreach ((string engineName, string protectedConnectionString) in settings.Api.Database.ProtectedConnectionStrings)
+            {
+                if (Enum.TryParse(engineName, ignoreCase: true, out DatabaseEngine engine) && !string.IsNullOrWhiteSpace(protectedConnectionString))
+                    connectionStrings[engine] = _databaseProtector.Unprotect(protectedConnectionString);
+            }
+
+            DatabaseEngine activeEngine = Enum.TryParse(
+                settings.Api.Database.ActiveEngine,
+                ignoreCase: true,
+                out DatabaseEngine storedEngine)
+                ? storedEngine
+                : _database.Engine;
+            return (activeEngine, connectionStrings);
+        }
+        catch (Exception exception) when (exception is JsonException or System.Security.Cryptography.CryptographicException or IOException)
+        {
+            return (_database.Engine, connectionStrings);
+        }
+    }
+
+    private PersistedDatabaseSettings CreatePersistedDatabaseSettings()
+    {
+        var persisted = new PersistedDatabaseSettings { ActiveEngine = _activeDatabaseEngine.ToString() };
+        lock (_databaseLock)
+        {
+            foreach ((DatabaseEngine engine, string connectionString) in _databaseConnectionStrings)
+                persisted.ProtectedConnectionStrings[engine.ToString()] = _databaseProtector.Protect(connectionString);
+        }
+        return persisted;
     }
 
     private async Task WriteAsync(PersistedBackendSettings settings, CancellationToken cancellationToken)
@@ -164,6 +273,8 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         public PersistedNetworkSettings Network { get; set; } = new();
 
         public PersistedSecuritySettings Security { get; set; } = new();
+
+        public PersistedDatabaseSettings Database { get; set; } = new();
     }
 
     private sealed class PersistedNetworkSettings
@@ -206,5 +317,12 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
 
         public string LanApiKeyHash { get; set; } = string.Empty;
 
+    }
+
+    private sealed class PersistedDatabaseSettings
+    {
+        public string ActiveEngine { get; set; } = DatabaseEngine.SqLite.ToString();
+
+        public Dictionary<string, string> ProtectedConnectionStrings { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     }
 }

@@ -46,8 +46,14 @@
     <ProjectReference Include="..\Application.Infrastructure\Application.Infrastructure.csproj" />
     <ProjectReference Include="..\Application.Migrations\Application.Migrations.csproj" />
     <PackageReference Include="CommandQ.Cqrs" />
+    <PackageReference Include="CommandQ.Common" />
     <PackageReference Include="CommandQ.Localization" />
+    <PackageReference Include="CommandQ.Persistence" />
     <PackageReference Include="CommandQ.Time" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="MySql.Data" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="System.Data.SQLite.Core" />
   </ItemGroup>
 
   <ItemGroup>

@@ -22,6 +22,7 @@ declare global {
   interface Window {
     turboDeck: {
       request<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T>;
+      restartBackend(): Promise<void>;
       selectAndUploadFile(purpose?: string): Promise<unknown | undefined>;
       selectAndUploadMedia(displayName?: string, mediaKind?: 'any' | 'image'): Promise<unknown | undefined>;
       openVisualizer(): Promise<void>;

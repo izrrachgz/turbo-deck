@@ -5,6 +5,25 @@ import { BackendApiService, CellConfigModel, TwitchRewardBindingModel, TwitchRew
 import { TwitchPage } from './twitch.page';
 
 describe('TwitchPage', () => {
+  it('does not request rewards when status already requires reauthorization', async () => {
+    const api = {
+      getTwitchStatus: vi.fn().mockResolvedValue({
+        configured: true,
+        authorized: true,
+        connected: false,
+        lastError: 'Reconnect Twitch.',
+      }),
+      getTwitchRewards: vi.fn(),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new TwitchPage());
+
+    await page.refresh();
+
+    expect(api.getTwitchRewards).not.toHaveBeenCalled();
+    expect(page.status()?.lastError).toBe('Reconnect Twitch.');
+  });
+
   it('replaces a cell reward binding from the grid selector', async () => {
     const oldReward = reward('old', 'Old reward');
     const newReward = reward('new', 'New reward');
@@ -46,6 +65,33 @@ describe('TwitchPage', () => {
     expect(page.bindingDialogOpen()).toBe(true);
     expect(page.selectedCell()?.id).toBe(1);
     expect(page.dialogRewardId()).toBe('reward-1');
+  });
+
+  it('does not restore a stale refresh error after disconnect succeeds', async () => {
+    let rejectRewards: ((error: Error) => void) | undefined;
+    const rewards = new Promise<never>((_, reject) => { rejectRewards = reject; });
+    const api = {
+      getTwitchStatus: vi.fn()
+        .mockResolvedValueOnce({ configured: true, authorized: true, connected: false })
+        .mockResolvedValueOnce({ configured: false, authorized: false, connected: false }),
+      getTwitchRewards: vi.fn().mockReturnValue(rewards),
+      getMediaAssets: vi.fn().mockResolvedValue([]),
+      getTwitchBindings: vi.fn().mockResolvedValue([]),
+      getProfiles: vi.fn().mockResolvedValue([]),
+      disconnectTwitch: vi.fn().mockResolvedValue(undefined),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new TwitchPage());
+
+    const refresh = page.refresh();
+    await vi.waitFor(() => expect(page.status()?.authorized).toBe(true));
+    await page.disconnect();
+    rejectRewards?.(new Error('Twitch authorization must be refreshed.'));
+    await refresh;
+
+    expect(page.status()?.authorized).toBe(false);
+    expect(page.error()).toBe('');
+    expect(page.notice()).toContain('tokens were purged');
   });
 });
 

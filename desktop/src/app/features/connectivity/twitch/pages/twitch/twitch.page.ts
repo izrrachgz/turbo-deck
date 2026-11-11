@@ -43,6 +43,7 @@ export class TwitchPage implements OnInit, OnDestroy {
   private rewardOptionSource?: readonly TwitchRewardModel[];
   private rewardOptionCulture = '';
   private cachedRewardOptions: readonly AutocompleteSelectOption[] = [];
+  private connectionRevision = 0;
 
   readonly status = signal<TwitchConnectionStatusModel | null>(null);
   readonly authorization = signal<TwitchDeviceAuthorizationModel | null>(null);
@@ -96,13 +97,14 @@ export class TwitchPage implements OnInit, OnDestroy {
   }
 
   async refresh(): Promise<void> {
+    const revision = this.connectionRevision;
     this.error.set('');
     try {
       const status = await this.api.getTwitchStatus();
       this.status.set(status);
-      if (status.authorized) await this.loadConnectedData();
+      if (status.authorized && !status.lastError) await this.loadConnectedData();
     } catch (error) {
-      this.error.set(this.errorText(error));
+      if (revision === this.connectionRevision) this.error.set(this.errorText(error));
     }
   }
 
@@ -139,8 +141,10 @@ export class TwitchPage implements OnInit, OnDestroy {
   }
 
   async disconnect(): Promise<void> {
+    this.connectionRevision += 1;
     this.busy.set(true);
     this.error.set('');
+    this.notice.set('');
     try {
       await this.api.disconnectTwitch();
       if (this.pollTimer) clearTimeout(this.pollTimer);

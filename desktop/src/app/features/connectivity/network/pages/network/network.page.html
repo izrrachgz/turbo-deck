@@ -13,7 +13,7 @@
       </div>
       <p class="mt-1.5 text-xs text-slate-500">{{ 'network.addressesHelp' | text }}</p>
     </div>
-    <label class="text-sm font-medium text-slate-700">{{ 'network.instanceName' | text }}<input class="td-field mt-1.5" maxlength="100" [(ngModel)]="instanceName" /></label>
+    <label class="text-sm font-medium text-slate-700">{{ 'network.instanceName' | text }}<input class="td-field mt-1.5" maxlength="100" [ngModel]="instanceName()" (ngModelChange)="instanceName.set($event)" /><span class="mt-1.5 block text-xs font-normal text-slate-500">{{ 'network.instanceNameHelp' | text }}</span></label>
     <label class="flex items-center gap-2 self-end pb-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="discoveryEnabled" /> {{ 'network.discovery' | text }}</label>
     <label class="text-sm font-medium text-slate-700 md:col-span-2">{{ 'network.corsOrigins' | text }}<textarea class="td-field mt-1.5 min-h-20 font-mono text-xs" [(ngModel)]="corsAllowedOrigins"></textarea></label>
     <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="httpsEnabled" /> {{ 'network.https' | text }}</label>
@@ -37,7 +37,19 @@
   </div>
 </section>
 
-<td-confirmation-dialog [open]="restartDialogOpen()" (openChange)="restartDialogOpen.set($event)" title="network.restartTitle" confirmLabel="network.saveRestart" icon="rotate-cw" [processing]="saving()" (confirmed)="saveAndRestart()"><p>{{ 'network.restartMessage' | text }}</p></td-confirmation-dialog>
+<td-confirmation-dialog [open]="restartDialogOpen()" (openChange)="restartDialogOpen.set($event)" title="network.restartTitle" [confirmLabel]="saving() ? 'network.restartWorking' : 'network.saveRestart'" icon="rotate-cw" [processing]="saving()" (confirmed)="saveAndRestart()">
+  @if (saving()) {
+    <div class="flex items-start gap-3" role="status" aria-live="assertive">
+      <svg class="mt-0.5 animate-spin text-teal-500" lucideIcon="rotate-cw" size="22" aria-hidden="true"></svg>
+      <div>
+        <p class="font-semibold text-slate-950">{{ (restartPhase() === 'saving' ? 'network.restartSavingTitle' : 'network.restartingTitle') | text }}</p>
+        <p class="mt-1 text-sm text-slate-600">{{ (restartPhase() === 'saving' ? 'network.restartSavingMessage' : 'network.restartingMessage') | text }}</p>
+      </div>
+    </div>
+  } @else {
+    <p>{{ 'network.restartMessage' | text }}</p>
+  }
+</td-confirmation-dialog>
 <td-confirmation-dialog [open]="lanDialogOpen()" (openChange)="lanDialogOpen.set($event)" title="network.pairingTitle" confirmLabel="network.generatePairing" icon="qr-code" [destructive]="true" (confirmed)="createLanPairing()"><p>{{ 'network.pairingMessage' | text }}</p></td-confirmation-dialog>
 <td-confirmation-dialog [open]="firewallDialogOpen()" (openChange)="firewallDialogOpen.set($event)" title="network.firewallConfirmTitle" confirmLabel="action.confirm" icon="shield" [processing]="applyingFirewall()" (confirmed)="applyFirewall()"><p>{{ 'network.firewallConfirmMessage' | text }}</p></td-confirmation-dialog>
 <td-confirmation-dialog [open]="addressDialogOpen()" (openChange)="addressDialogOpen.set($event)" title="network.addressDialogTitle" confirmLabel="action.save" icon="radio" [confirmDisabled]="addressEditorInvalid()" (confirmed)="saveAddresses()">

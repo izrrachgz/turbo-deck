@@ -110,7 +110,8 @@ button, input, select, textarea { font: inherit; }
 .td-eyebrow { margin: 0 0 .35rem; color: var(--td-accent-text); font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
 .td-page-title { margin: 0; color: var(--td-text); font-size: clamp(1.65rem, 3vw, 2.25rem); font-weight: 700; letter-spacing: -.035em; }
 .td-page-description { margin: .5rem 0 0; max-width: 48rem; color: var(--td-text-secondary); font-size: .95rem; line-height: 1.6; }
-.td-field { width: 100%; min-height: 2.65rem; border: 1px solid var(--td-border); border-radius: .375rem; background: var(--td-surface); padding: .6rem .75rem; color: var(--td-text); }
+.td-field { width: 100%; min-height: 2.65rem; border: 1px solid var(--td-border); border-radius: .375rem; background: var(--td-surface); padding: .6rem .75rem; color: var(--td-text); caret-color: var(--td-text); -webkit-text-fill-color: var(--td-text); opacity: 1; }
+.td-field:-webkit-autofill, .td-field:-webkit-autofill:hover, .td-field:-webkit-autofill:focus { border-color: var(--td-border); box-shadow: 0 0 0 1000px var(--td-surface) inset; -webkit-text-fill-color: var(--td-text); }
 .td-field:focus { border-color: var(--td-accent); box-shadow: 0 0 0 3px var(--td-focus-soft); outline: none; }
 .td-button-primary, .td-button-secondary, .td-button-danger { display: inline-flex; min-height: 2.65rem; align-items: center; justify-content: center; gap: .45rem; border-radius: .375rem; padding: .6rem 1rem; font-size: .875rem; font-weight: 700; transition: 150ms ease; }
 .td-button-primary { border: 1px solid var(--td-accent); background: var(--td-accent); color: var(--td-on-accent); }
