@@ -10,6 +10,7 @@ const path = require('node:path');
 const readline = require('node:readline');
 const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 const { assertTrustedSender } = require('./ipc-trust');
+const { mediaUploadPath } = require('./media-upload');
 const { createMediaProtocolHandler, MEDIA_PROTOCOL_PRIVILEGES } = require('./media-protocol');
 const { createUpdateService } = require('./update-service');
 const { createDeckExplorerUrl, createVisualizerUrl, selectBrowserClientBaseUrl } = require('./visualizer-url');
@@ -487,7 +488,7 @@ function registerIpcHandlers() {
     if (typeof request?.displayName === 'string' && request.displayName.length <= 160) {
       form.append('DisplayName', request.displayName);
     }
-    return backendRequest('/api/v1/media-assets', { method: 'POST', body: form });
+    return backendRequest(mediaUploadPath(mediaKind), { method: 'POST', body: form });
   });
 
   ipcMain.handle(VISUALIZER_OPEN_CHANNEL, async event => {

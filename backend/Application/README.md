@@ -17,5 +17,6 @@ Deck requests own the profile/page/cell limits and expose sparse cell configurat
 product preferences such as culture, palette, timezone mode, queue capacity, and visualizer safe margin. Kestrel
 network configuration remains a host concern under `Api`.
 
-Media requests compose the Files module rather than handling physical paths. Playback requests resolve enabled cell
+Media requests compose the Files module rather than handling physical paths. Cell-thumbnail uploads use the
+Application-owned processor port and persist only the optimized PNG derivative. Playback requests resolve enabled cell
 configuration and enqueue immutable media identifiers and playback parameters. Queue state is transient by design.

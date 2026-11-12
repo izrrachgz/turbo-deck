@@ -10,9 +10,11 @@ public static class MediaModuleExtensions
 {
     public static IServiceCollection AddMediaModule(this IServiceCollection services)
     {
+        services.AddApplicationRequest<UploadCellThumbnailCommand, MediaAssetModel, UploadCellThumbnailCommandHandler>();
         services.AddApplicationRequest<UploadMediaAssetCommand, MediaAssetModel, UploadMediaAssetCommandHandler>();
         services.AddApplicationRequest<GetMediaAssetsQuery, IReadOnlyList<MediaAssetModel>, GetMediaAssetsQueryHandler>();
         services.AddApplicationRequest<GetMediaAssetQuery, MediaAssetModel?, GetMediaAssetQueryHandler>();
+        services.AddScoped<IValidator<UploadCellThumbnailCommand>, UploadCellThumbnailCommandValidator>();
         services.AddScoped<IValidator<UploadMediaAssetCommand>, UploadMediaAssetCommandValidator>();
         services.AddScoped<IValidator<GetMediaAssetsQuery>, GetMediaAssetsQueryValidator>();
         return services;

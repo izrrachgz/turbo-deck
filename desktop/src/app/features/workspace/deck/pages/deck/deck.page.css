@@ -87,7 +87,63 @@
 
 .td-cell-asset-action { white-space: nowrap; }
 
+.td-cell-behavior {
+  border: 1px solid var(--td-border);
+  border-radius: .75rem;
+  background: var(--td-surface-muted);
+  padding: 1rem;
+  color: var(--td-text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--td-text) 5%, transparent);
+}
+
+.td-cell-behavior h3 {
+  margin: 0;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.td-cell-behavior header p {
+  margin: .2rem 0 0;
+  color: var(--td-text-muted);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.td-cell-behavior-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: .85rem;
+}
+
+.td-cell-behavior-option {
+  display: flex;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: .65rem;
+}
+
+.td-cell-behavior-copy {
+  display: grid;
+  min-width: 0;
+  gap: .12rem;
+}
+
+.td-cell-behavior-copy strong {
+  color: var(--td-text);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.td-cell-behavior-copy small {
+  color: var(--td-text-secondary);
+  font-size: .68rem;
+  line-height: 1.35;
+}
+
 @media (max-width: 640px) {
   .td-cell-asset { grid-template-columns: auto minmax(0, 1fr); }
   .td-cell-asset-action { grid-column: 1 / -1; justify-content: center; }
+  .td-cell-behavior-options { grid-template-columns: 1fr; }
 }

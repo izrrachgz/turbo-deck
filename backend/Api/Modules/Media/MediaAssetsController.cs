@@ -55,6 +55,39 @@ public sealed class MediaAssetsController(
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
+    [HttpPost("thumbnails")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<MediaAssetModel>> UploadThumbnail(
+        [FromForm] UploadMediaAssetRequest request,
+        CancellationToken cancellationToken)
+    {
+        long maximumSizeBytes = Math.Min(_maximumFileSizeBytes, CellThumbnailSpecifications.MaximumSourceBytes);
+        FileUploadValidationFailure failure = MediaUploadPolicy.ValidateImage(request.File, maximumSizeBytes);
+        if (failure != FileUploadValidationFailure.None)
+        {
+            string message = failure switch
+            {
+                FileUploadValidationFailure.FileRequired => messages.Get(nameof(Messages.File_Is_Required)),
+                FileUploadValidationFailure.FileTooLarge => messages.Get(nameof(Messages.File_Exceeds_Maximum_Size), maximumSizeBytes),
+                _ => messages.Get(nameof(Messages.File_Type_Not_Allowed))
+            };
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: message);
+        }
+
+        if (!await FileUploadPolicy.HasValidSignatureAsync(request.File!, cancellationToken))
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: messages.Get(nameof(Messages.File_Content_Does_Not_Match_Extension)));
+
+        IFormFile file = request.File!;
+        await using Stream content = file.OpenReadStream();
+        MediaAssetModel created = await dispatcher.Send(new UploadCellThumbnailCommand(
+            file.FileName,
+            content,
+            request.DisplayName), cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+    }
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<MediaAssetModel>>> List(
         [FromQuery] int limit = 100,

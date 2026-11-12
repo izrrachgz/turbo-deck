@@ -4,9 +4,16 @@
       <h3 class="text-sm font-semibold text-slate-950">{{ 'deck.preview' | text }}</h3>
       <p class="mt-0.5 text-xs text-slate-500">{{ 'deck.previewHelp' | text }}</p>
     </div>
-    @if (playing()) {
-      <button type="button" class="td-button-secondary px-3 py-2" (click)="stop()">{{ 'deck.stopTest' | text }}</button>
-    }
+    <button
+      type="button"
+      class="size-10 justify-center p-0"
+      [class.td-button-primary]="!playing()"
+      [class.td-button-secondary]="playing()"
+      [disabled]="!playing() && (!media || testDisabled)"
+      [attr.aria-label]="(playing() ? 'deck.stopTest' : 'deck.testConfiguration') | text"
+      [attr.title]="(playing() ? 'deck.stopTest' : 'deck.testConfiguration') | text"
+      (click)="playing() ? stop() : test()"
+    ><svg [lucideIcon]="playing() ? 'square' : 'play'" size="17" aria-hidden="true"></svg></button>
   </header>
   <div #stage class="td-cell-preview-stage">
     @if (!playing()) {

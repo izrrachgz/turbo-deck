@@ -4,6 +4,11 @@ namespace Api.Modules.Media;
 
 internal static class MediaUploadPolicy
 {
+    private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".gif", ".webp"
+    };
+
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".gif", ".webp",
@@ -17,6 +22,16 @@ internal static class MediaUploadPolicy
         if (failure != FileUploadValidationFailure.None)
             return failure;
         return AllowedExtensions.Contains(Path.GetExtension(file!.FileName))
+            ? FileUploadValidationFailure.None
+            : FileUploadValidationFailure.FileTypeNotAllowed;
+    }
+
+    public static FileUploadValidationFailure ValidateImage(IFormFile? file, long maximumSizeBytes)
+    {
+        FileUploadValidationFailure failure = FileUploadPolicy.Validate(file, maximumSizeBytes);
+        if (failure != FileUploadValidationFailure.None)
+            return failure;
+        return AllowedImageExtensions.Contains(Path.GetExtension(file!.FileName))
             ? FileUploadValidationFailure.None
             : FileUploadValidationFailure.FileTypeNotAllowed;
     }

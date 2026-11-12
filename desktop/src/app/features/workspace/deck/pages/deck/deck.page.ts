@@ -285,16 +285,6 @@ export class DeckPage implements OnInit {
     return duration === 'permanent' ? 5000 : Number(duration);
   }
 
-  formatMediaDuration(milliseconds: number | null | undefined): string | null {
-    if (!milliseconds || milliseconds < 1) return null;
-    const seconds = Math.round(milliseconds / 1000);
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  }
-
-  testCell(): void {
-    void this.cellPreview?.test();
-  }
-
   setCellDialogOpen(open: boolean): void {
     if (!open) this.disposeCellEditor();
     this.cellDialogOpen.set(open);

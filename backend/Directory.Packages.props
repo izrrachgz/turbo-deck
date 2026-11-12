@@ -44,6 +44,8 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageVersion Include="SkiaSharp" Version="4.155.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.155.0" />
     <PackageVersion Include="SqlKata" Version="4.0.1" />
     <PackageVersion Include="SqlKata.Execution" Version="4.0.1" />
     <PackageVersion Include="System.Data.SQLite.Core" Version="1.0.119" />

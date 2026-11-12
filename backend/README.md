@@ -76,6 +76,7 @@ POST   /api/v1/profiles/{id}/pages
 GET    /api/v1/pages/{id}/grid
 PUT    /api/v1/pages/{id}/cells/{row}/{column}
 POST   /api/v1/media-assets
+POST   /api/v1/media-assets/thumbnails
 GET    /api/v1/media-assets
 GET    /api/v1/media-assets/{id}
 GET    /api/v1/media-assets/{id}/content

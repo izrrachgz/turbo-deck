@@ -1,4 +1,5 @@
 import { Component, ElementRef, Input, OnDestroy, ViewChild, numberAttribute, signal } from '@angular/core';
+import { LucideDynamicIcon } from '@lucide/angular';
 import { PitchShift, Player, gainToDb, start as startAudio } from 'tone';
 
 import { CellAnimationType, MediaAssetModel } from '../../../../../core/backend-api.service';
@@ -11,7 +12,7 @@ export type CellDisplaySize = 'small' | 'medium' | 'large' | 'fullscreen';
 @Component({
   selector: 'td-cell-media-preview',
   standalone: true,
-  imports: [TextPipe],
+  imports: [LucideDynamicIcon, TextPipe],
   templateUrl: './cell-media-preview.component.html',
   styleUrl: './cell-media-preview.component.css',
 })
@@ -28,6 +29,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
   @Input() animationInDurationMilliseconds = 0;
   @Input() animationOutType: CellAnimationType = 'none';
   @Input() animationOutDurationMilliseconds = 0;
+  @Input() testDisabled = false;
 
   private mediaElement?: HTMLElement;
   private player?: Player;
