@@ -2,7 +2,14 @@ using Api.Configuration;
 
 namespace Api.Models;
 
-public sealed record HttpsSettingsRequest(bool Enabled, string CertificatePath, string CertificatePassword);
+public sealed record HttpsSettingsRequest(
+    bool Enabled,
+    string CertificatePath,
+    string CertificatePassword,
+    bool Managed = false,
+    string CertificateAuthorityPath = "",
+    string[]? CertificateIdentities = null,
+    DateTime? CertificateExpiresUtc = null);
 
 public sealed record NetworkSettingsRequest(
     NetworkMode Mode,
@@ -27,8 +34,23 @@ public sealed record NetworkSettingsResponse(
     bool HttpsEnabled,
     string CertificatePath,
     bool CertificatePasswordConfigured,
-    bool LanApiKeyConfigured);
+    bool LanApiKeyConfigured,
+    bool HttpsManaged,
+    bool CertificateConfigured,
+    string CertificateAuthorityPath,
+    string[] CertificateIdentities,
+    string[] SuggestedCertificateIdentities,
+    DateTime? CertificateExpiresUtc);
 
-public sealed record SettingsChangedResponse(bool RestartRequired);
+public sealed record ManagedHttpsCertificateResponse(
+    string CertificatePath,
+    string CertificateAuthorityPath,
+    string[] Identities,
+    DateTime ExpiresUtc,
+    bool TrustedOnCurrentComputer);
+
+public sealed record SettingsChangedResponse(
+    bool RestartRequired,
+    ManagedHttpsCertificateResponse? Certificate = null);
 
 public sealed record LanApiKeyResponse(string ApiKey, bool RestartRequired);

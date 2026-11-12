@@ -13,6 +13,7 @@ namespace Api.Modules.System;
 public sealed class SystemController(
     IBackendSettingsStore settings,
     ISecurityTokenService tokens,
+    IManagedHttpsCertificateService certificates,
     IHostApplicationLifetime lifetime,
     ILogger<SystemController> logger) : ControllerBase
 {
@@ -31,9 +32,35 @@ public sealed class SystemController(
         if (request.Mode == NetworkMode.Lan && !tokens.HasLanApiKey)
             return Problem(statusCode: StatusCodes.Status409Conflict, title: "Generate a LAN API key before enabling LAN mode.");
 
+        ManagedHttpsCertificate? certificate = null;
+        if (request.Https.Enabled)
+        {
+            string[] identities = CertificateIdentityCatalog.GetSuggestedIdentities(request.Addresses);
+            certificate = await certificates.EnsureAsync(identities, cancellationToken);
+            request = request with
+            {
+                Https = new HttpsSettingsRequest(
+                    Enabled: true,
+                    certificate.CertificatePath,
+                    certificate.CertificatePassword,
+                    Managed: true,
+                    certificate.CertificateAuthorityPath,
+                    certificate.Identities,
+                    certificate.ExpiresUtc)
+            };
+        }
+
         await settings.SaveNetworkAsync(request, cancellationToken);
         logger.NetworkSettingsChanged(request.Mode, request.Port, request.DiscoveryEnabled);
-        return Ok(new SettingsChangedResponse(RestartRequired: true));
+        ManagedHttpsCertificateResponse? certificateResponse = certificate is null
+            ? null
+            : new ManagedHttpsCertificateResponse(
+                certificate.CertificatePath,
+                certificate.CertificateAuthorityPath,
+                certificate.Identities,
+                certificate.ExpiresUtc,
+                certificate.TrustedOnCurrentComputer);
+        return Ok(new SettingsChangedResponse(RestartRequired: true, certificateResponse));
     }
 
     [HttpPost("network/api-key/rotate")]
@@ -86,8 +113,6 @@ public sealed class SystemController(
         string? originError = ValidateBrowserOrigins(request.CorsAllowedOrigins);
         if (originError is not null)
             return originError;
-        if (request.Mode == NetworkMode.Lan && request.Https.Enabled && string.IsNullOrWhiteSpace(request.Https.CertificatePath))
-            return "A certificate path is required when LAN HTTPS is enabled.";
         if (request.Mode == NetworkMode.Lan && !request.Https.Enabled && !request.AllowInsecureHttp)
             return "LAN mode requires HTTPS unless insecure HTTP is explicitly enabled.";
         return null;

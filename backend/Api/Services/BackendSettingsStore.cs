@@ -72,7 +72,13 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         _network.Https.Enabled,
         _network.Https.CertificatePath,
         !string.IsNullOrWhiteSpace(_network.Https.CertificatePassword),
-        !string.IsNullOrWhiteSpace(_security.LanApiKeyHash));
+        !string.IsNullOrWhiteSpace(_security.LanApiKeyHash),
+        _network.Https.Managed,
+        File.Exists(_network.Https.CertificatePath),
+        _network.Https.CertificateAuthorityPath,
+        CertificateIdentityCatalog.NormalizeDistinct(_network.Https.CertificateIdentities),
+        CertificateIdentityCatalog.GetSuggestedIdentities(_network.Addresses),
+        NormalizeUtc(_network.Https.CertificateExpiresUtc));
 
     public async Task SaveNetworkAsync(NetworkSettingsRequest request, CancellationToken cancellationToken)
     {
@@ -96,10 +102,21 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
                 Https = new HttpsOptions
                 {
                     Enabled = request.Https.Enabled,
-                    CertificatePath = request.Https.CertificatePath,
+                    Managed = request.Https.Managed || (!request.Https.Enabled && _network.Https.Managed),
+                    CertificatePath = string.IsNullOrWhiteSpace(request.Https.CertificatePath)
+                        ? _network.Https.CertificatePath
+                        : request.Https.CertificatePath,
                     CertificatePassword = string.IsNullOrEmpty(request.Https.CertificatePassword)
                         ? _network.Https.CertificatePassword
-                        : request.Https.CertificatePassword
+                        : request.Https.CertificatePassword,
+                    CertificateAuthorityPath = string.IsNullOrWhiteSpace(request.Https.CertificateAuthorityPath)
+                        ? _network.Https.CertificateAuthorityPath
+                        : request.Https.CertificateAuthorityPath,
+                    CertificateIdentities = request.Https.CertificateIdentities is { Length: > 0 }
+                        ? CertificateIdentityCatalog.NormalizeDistinct(request.Https.CertificateIdentities)
+                        : _network.Https.CertificateIdentities,
+                    CertificateExpiresUtc = NormalizeUtc(
+                        request.Https.CertificateExpiresUtc ?? _network.Https.CertificateExpiresUtc)
                 }
             };
             await WriteAsync(settings, cancellationToken);
@@ -241,6 +258,19 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
                 persisted.ProtectedConnectionStrings[engine.ToString()] = _databaseProtector.Protect(connectionString);
         }
         return persisted;
+    }
+
+    private static DateTime? NormalizeUtc(DateTime? value)
+    {
+        if (value is null)
+            return null;
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
     }
 
     private async Task WriteAsync(PersistedBackendSettings settings, CancellationToken cancellationToken)

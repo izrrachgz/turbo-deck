@@ -54,7 +54,8 @@
   </form>
 </td-confirmation-dialog>
 
-<td-confirmation-dialog [open]="cellDialogOpen()" (openChange)="setCellDialogOpen($event)" title="deck.configureCell" confirmLabel="action.save" icon="pencil" [wide]="true" [processing]="savingCell()" [confirmDisabled]="cellForm.invalid" (confirmed)="saveCell()">
+@if (cellDialogOpen()) {
+<td-confirmation-dialog [open]="true" (openChange)="setCellDialogOpen($event)" title="deck.configureCell" confirmLabel="action.save" icon="pencil" [wide]="true" [processing]="savingCell()" [confirmDisabled]="cellForm.invalid" (confirmed)="saveCell()">
   <form class="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,.85fr)]" [formGroup]="cellForm" (ngSubmit)="saveCell()">
     <div class="grid content-start gap-5">
       <section class="rounded-xl border border-slate-200 bg-slate-50 p-5">
@@ -62,24 +63,34 @@
         <div class="mt-5 grid gap-4">
           <td-text-input formControlName="label" [label]="'deck.cellName' | text" [maxLength]="80" />
           <div>
-            <label for="cell-thumbnail" class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.thumbnail' | text }}</label>
-            <div class="td-field-group">
-              <select id="cell-thumbnail" class="td-field" formControlName="thumbnailMediaAssetId">
-                <option value="">{{ 'deck.noThumbnail' | text }}</option>
-                @for (media of imageMediaAssets(); track media.id) { <option [value]="media.id">{{ media.displayName }}</option> }
-              </select>
-              <button type="button" class="td-button-secondary px-4" [disabled]="uploadingThumbnail()" (click)="uploadThumbnail()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ 'deck.addThumbnail' | text }}</button>
-            </div>
+            <span class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.thumbnail' | text }}</span>
+            <article class="td-cell-asset td-cell-thumbnail-asset">
+              @if (selectedThumbnailBackground(); as thumbnailBackground) {
+                <div class="td-cell-thumbnail-preview" [style.background-image]="thumbnailBackground" role="img" [attr.aria-label]="selectedThumbnail()?.displayName || ('deck.thumbnail' | text)"></div>
+              } @else {
+                <div class="td-cell-thumbnail-preview td-cell-asset-placeholder" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
+              }
+              <div class="td-cell-asset-copy">
+                <strong>{{ selectedThumbnail()?.displayName || ('deck.noThumbnail' | text) }}</strong>
+                <span>{{ 'deck.thumbnailUploadHelp' | text }}</span>
+              </div>
+              <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingThumbnail()" (click)="uploadThumbnail()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedThumbnailBackground() ? 'deck.replaceThumbnail' : 'deck.addThumbnail') | text }}</button>
+            </article>
           </div>
           <div>
-            <label for="cell-media" class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.mediaFile' | text }}</label>
-            <div class="td-field-group">
-              <select id="cell-media" class="td-field" formControlName="mediaAssetId">
-                <option value="">{{ 'deck.noMedia' | text }}</option>
-                @for (media of mediaAssets(); track media.id) { <option [value]="media.id">{{ media.displayName }} ({{ media.kind }})</option> }
-              </select>
-              <button type="button" class="td-button-secondary px-4" [disabled]="uploadingMedia()" (click)="uploadMedia()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ 'deck.addMedia' | text }}</button>
-            </div>
+            <span class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.mediaFile' | text }}</span>
+            <article class="td-cell-asset">
+              <div class="td-cell-media-file-icon" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
+              <div class="td-cell-asset-copy">
+                @if (selectedMedia(); as media) {
+                  <div class="flex min-w-0 items-center gap-2"><strong>{{ media.displayName }}</strong><span class="td-media-kind-badge">{{ media.kind }}</span></div>
+                } @else {
+                  <strong>{{ 'deck.noMedia' | text }}</strong>
+                }
+                <span>{{ 'deck.mediaUploadHelp' | text }}</span>
+              </div>
+              <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingMedia()" (click)="uploadMedia()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedMedia() ? 'deck.replaceMedia' : 'deck.addMedia') | text }}</button>
+            </article>
           </div>
         </div>
       </section>
@@ -192,3 +203,4 @@
     </aside>
   </form>
 </td-confirmation-dialog>
+}

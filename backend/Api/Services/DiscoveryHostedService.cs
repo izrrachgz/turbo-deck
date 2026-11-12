@@ -1,6 +1,8 @@
 using Api.Configuration;
 using Api.Logging;
 using Makaretu.Dns;
+using System.Net;
+using System.Net.Sockets;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Options;
@@ -44,12 +46,14 @@ internal sealed class DiscoveryHostedService(
             if (address is null || !Uri.TryCreate(address, UriKind.Absolute, out Uri? uri))
                 return;
 
-            var profile = new ServiceProfile(options.Value.InstanceName, "_turbo-deck._tcp", (ushort)uri.Port);
-            profile.AddProperty("id", options.Value.InstanceId);
-            profile.AddProperty("api", "1");
-            profile.AddProperty("realtime", "1");
-            profile.AddProperty("hub", "/hubs/realtime");
-            profile.AddProperty("tls", options.Value.Https.Enabled ? "1" : "0");
+            IPAddress[] addresses = NetworkAddressCatalog.GetSuggestions()
+                .Select(value => NetworkAddressCatalog.TryParse(value, out IPAddress address) ? address : IPAddress.None)
+                .Where(address => address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(address) &&
+                    !NetworkAddressCatalog.IsWildcard(address))
+                .Distinct()
+                .ToArray();
+            ServiceProfile profile = CreateProfile(options.Value, (ushort)uri.Port, addresses);
 
             _discovery = new ServiceDiscovery();
             _discovery.Advertise(profile);
@@ -59,5 +63,26 @@ internal sealed class DiscoveryHostedService(
         {
             logger.DiscoveryFailed(exception);
         }
+    }
+
+    internal static ServiceProfile CreateProfile(NetworkOptions network, ushort port, IEnumerable<IPAddress> addresses)
+    {
+        var profile = new ServiceProfile(network.InstanceName, "_turbo-deck._tcp", port, addresses);
+        DomainName originalHostName = profile.HostName;
+        profile.HostName = CertificateIdentityCatalog.FriendlyHostName;
+        foreach (ResourceRecord resource in profile.Resources)
+        {
+            if (resource is SRVRecord service)
+                service.Target = profile.HostName;
+            if (resource.Name.Equals(originalHostName))
+                resource.Name = profile.HostName;
+        }
+        profile.AddProperty("id", network.InstanceId);
+        profile.AddProperty("api", "1");
+        profile.AddProperty("realtime", "1");
+        profile.AddProperty("hub", "/hubs/realtime");
+        profile.AddProperty("tls", network.Https.Enabled ? "1" : "0");
+        profile.AddProperty("host", CertificateIdentityCatalog.FriendlyHostName);
+        return profile;
     }
 }

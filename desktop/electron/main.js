@@ -12,7 +12,7 @@ const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 const { assertTrustedSender } = require('./ipc-trust');
 const { createMediaProtocolHandler, MEDIA_PROTOCOL_PRIVILEGES } = require('./media-protocol');
 const { createUpdateService } = require('./update-service');
-const { createDeckExplorerUrl, createVisualizerUrl } = require('./visualizer-url');
+const { createDeckExplorerUrl, createVisualizerUrl, selectBrowserClientBaseUrl } = require('./visualizer-url');
 
 const API_CHANNEL = 'backend:request';
 const BACKEND_RESTART_CHANNEL = 'backend:restart';
@@ -93,6 +93,7 @@ let backendRealtimeRetryTimer;
 let updateService;
 let backendUrl;
 let backendAddresses = [];
+let backendBrowserHostName;
 let quitting = false;
 const backendToken = randomBytes(32).toString('base64url');
 const backendLifecycle = new EventEmitter();
@@ -178,6 +179,7 @@ async function startBackend() {
   fs.mkdirSync(dataDirectory, { recursive: true });
   backendUrl = undefined;
   backendAddresses = [];
+  backendBrowserHostName = undefined;
   backendProcess = spawn(launch.command, [...launch.args, `--ParentPid=${process.pid}`], {
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -198,7 +200,8 @@ async function startBackend() {
         lines.close();
         resolve({
           url: readyUrl,
-          addresses: Array.isArray(message.addresses) ? message.addresses.filter(value => typeof value === 'string') : []
+          addresses: Array.isArray(message.addresses) ? message.addresses.filter(value => typeof value === 'string') : [],
+          browserHostName: typeof message.browserHostName === 'string' ? message.browserHostName : undefined
         });
       } catch {
         console.log(`[backend] ${line}`);
@@ -220,6 +223,7 @@ async function startBackend() {
   });
   backendUrl = ready.url;
   backendAddresses = ready.addresses;
+  backendBrowserHostName = ready.browserHostName;
 }
 
 function normalizeReadyUrl(value) {
@@ -488,12 +492,14 @@ function registerIpcHandlers() {
 
   ipcMain.handle(VISUALIZER_OPEN_CHANNEL, async event => {
     assertTrustedSender(event, mainWindow?.webContents);
-    await shell.openExternal(createVisualizerUrl(backendUrl));
+    await shell.openExternal(createVisualizerUrl(
+      selectBrowserClientBaseUrl(backendUrl, backendAddresses, backendBrowserHostName)));
   });
 
   ipcMain.handle(DECK_OPEN_CHANNEL, async event => {
     assertTrustedSender(event, mainWindow?.webContents);
-    await shell.openExternal(createDeckExplorerUrl(backendUrl));
+    await shell.openExternal(createDeckExplorerUrl(
+      selectBrowserClientBaseUrl(backendUrl, backendAddresses, backendBrowserHostName)));
   });
 
   ipcMain.handle(LAN_ACCESS_CHANNEL, async event => {

@@ -30,6 +30,12 @@ export interface NetworkSettings {
   certificatePath: string;
   certificatePasswordConfigured: boolean;
   lanApiKeyConfigured: boolean;
+  httpsManaged: boolean;
+  certificateConfigured: boolean;
+  certificateAuthorityPath: string;
+  certificateIdentities: string[];
+  suggestedCertificateIdentities: string[];
+  certificateExpiresUtc?: string | null;
 }
 
 export interface UpdateNetworkRequest {
@@ -41,6 +47,14 @@ export interface UpdateNetworkRequest {
   corsAllowedOrigins: string[];
   allowInsecureHttp: boolean;
   https: { enabled: boolean; certificatePath: string; certificatePassword: string };
+}
+
+export interface ManagedHttpsCertificateModel {
+  certificatePath: string;
+  certificateAuthorityPath: string;
+  identities: string[];
+  expiresUtc: string;
+  trustedOnCurrentComputer: boolean;
 }
 
 export interface LanAccessModel {
@@ -287,7 +301,10 @@ export class BackendApiService {
     return this.request('POST', '/system/database/switch', { engine, connectionString: connectionString.trim() || null });
   }
 
-  updateNetwork(settings: UpdateNetworkRequest): Promise<{ restartRequired: boolean }> {
+  updateNetwork(settings: UpdateNetworkRequest): Promise<{
+    restartRequired: boolean;
+    certificate?: ManagedHttpsCertificateModel | null;
+  }> {
     return this.request('PUT', '/system/network', settings);
   }
 

@@ -10,3 +10,8 @@ readiness, writes one JSON readiness record to stdout, and writes Serilog events
 
 Controllers remain transport-only and dispatch application requests. Host implementation types are internal unless a
 public framework-discovered type requires an intentional interface.
+
+Managed HTTPS assets live under `TURBO_DECK_DATA_DIR\Certificates`. The host reuses its local authority, renews the
+server certificate when required, and installs the public authority in the Windows current-user Root store. HTTPS mode
+also exposes an ephemeral HTTP loopback endpoint exclusively for the supervising Electron process; announced LAN
+browser endpoints continue to use the configured HTTPS port.

@@ -43,6 +43,7 @@ export class NetworkPage implements OnInit {
   readonly applyingFirewall = signal(false);
   readonly addressDialogOpen = signal(false);
   readonly corsOriginDialogOpen = signal(false);
+  readonly httpsInfoDialogOpen = signal(false);
 
   mode = 0;
   addresses = ['127.0.0.1'];
@@ -55,8 +56,13 @@ export class NetworkPage implements OnInit {
   corsOriginDraft: string[] = [];
   allowInsecureHttp = false;
   httpsEnabled = false;
+  httpsManaged = false;
+  certificateConfigured = false;
   certificatePath = '';
-  certificatePassword = '';
+  certificateAuthorityPath = '';
+  certificateIdentities: string[] = [];
+  suggestedCertificateIdentities: string[] = [];
+  certificateExpiresUtc: string | null = null;
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -74,9 +80,15 @@ export class NetworkPage implements OnInit {
       this.discoveryEnabled = settings.discoveryEnabled;
       this.instanceName.set(settings.instanceName);
       this.corsAllowedOrigins = uniqueBrowserOrigins(settings.corsAllowedOrigins);
-      this.allowInsecureHttp = settings.allowInsecureHttp;
       this.httpsEnabled = settings.httpsEnabled;
+      this.allowInsecureHttp = !this.httpsEnabled && settings.allowInsecureHttp;
+      this.httpsManaged = settings.httpsManaged ?? false;
+      this.certificateConfigured = this.httpsManaged && (settings.certificateConfigured ?? false);
       this.certificatePath = settings.certificatePath;
+      this.certificateAuthorityPath = settings.certificateAuthorityPath ?? '';
+      this.certificateIdentities = settings.certificateIdentities ?? [];
+      this.suggestedCertificateIdentities = settings.suggestedCertificateIdentities ?? [];
+      this.certificateExpiresUtc = settings.certificateExpiresUtc ?? null;
       this.error.set('');
     } catch (error) {
       this.error.set(this.errorText(error));
@@ -102,6 +114,27 @@ export class NetworkPage implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  setHttpsEnabled(enabled: boolean): void {
+    this.httpsEnabled = enabled;
+    this.allowInsecureHttp = !enabled && this.mode === 1;
+  }
+
+  setMode(mode: number): void {
+    this.mode = mode;
+    this.allowInsecureHttp = mode === 1 && !this.httpsEnabled;
+  }
+
+  displayedCertificateIdentities(): string[] {
+    return this.certificateIdentities.length
+      ? this.certificateIdentities
+      : this.suggestedCertificateIdentities;
+  }
+
+  certificateExpiryText(): string {
+    if (!this.certificateExpiresUtc) return '';
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(this.certificateExpiresUtc));
   }
 
   async openVisualizer(): Promise<void> {
@@ -261,11 +294,11 @@ export class NetworkPage implements OnInit {
       discoveryEnabled: this.discoveryEnabled,
       instanceName: this.instanceName().trim(),
       corsAllowedOrigins: this.corsAllowedOrigins,
-      allowInsecureHttp: this.allowInsecureHttp,
+      allowInsecureHttp: this.mode === 1 && !this.httpsEnabled && this.allowInsecureHttp,
       https: {
         enabled: this.httpsEnabled,
-        certificatePath: this.certificatePath.trim(),
-        certificatePassword: this.certificatePassword,
+        certificatePath: '',
+        certificatePassword: '',
       },
     };
   }

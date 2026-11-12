@@ -1,4 +1,5 @@
 using Api.Logging;
+using Api.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Localization.Abstractions;
@@ -31,10 +32,14 @@ internal sealed class ApiExceptionHandler(IHostEnvironment environment, ILogger<
                 StatusCodes.Status404NotFound => messages.Get(nameof(Messages.Not_Found)),
                 _ => messages.Get(nameof(Messages.Server_Error))
             },
-            Detail = environment.IsDevelopment() ? exception.Message : null,
+            Detail = environment.IsDevelopment() || exception is ManagedHttpsCertificateException
+                ? exception.Message
+                : null,
             Instance = context.Request.Path
         };
-        problem.Extensions["errorCode"] = status == StatusCodes.Status400BadRequest ? "validation_failed" : "request_failed";
+        problem.Extensions["errorCode"] = exception is ManagedHttpsCertificateException
+            ? "https_certificate_failed"
+            : status == StatusCodes.Status400BadRequest ? "validation_failed" : "request_failed";
         problem.Extensions["traceId"] = context.TraceIdentifier;
 
         context.Response.StatusCode = status;

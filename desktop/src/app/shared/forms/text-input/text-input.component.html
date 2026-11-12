@@ -3,10 +3,11 @@
   [id]="inputId"
   type="text"
   class="td-field"
-  [value]="value"
+  [value]="value()"
   [placeholder]="placeholder"
   [maxLength]="maxLength ?? null"
-  [disabled]="disabled"
+  [disabled]="disabled()"
+  [autocomplete]="autocomplete"
   (input)="handleInput($event)"
   (blur)="markTouched()"
 />

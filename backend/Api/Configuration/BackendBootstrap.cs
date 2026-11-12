@@ -91,6 +91,9 @@ internal static class BackendBootstrap
                 IPAddress ipAddress = ParseAddress(address);
                 options.Listen(ipAddress, network.Port, listen => ConfigureHttps(listen, network.Https));
             }
+
+            if (network.Https.Enabled)
+                options.Listen(IPAddress.Loopback, 0);
         });
     }
 

@@ -12,7 +12,7 @@
 
     <div class="mt-5 grid gap-4 sm:grid-cols-2">
       <label class="td-network-field">{{ 'network.mode' | text }}
-        <select class="td-field mt-1.5" [(ngModel)]="mode"><option [ngValue]="0">{{ 'network.loopback' | text }}</option><option [ngValue]="1">{{ 'network.lan' | text }}</option></select>
+        <select class="td-field mt-1.5" [ngModel]="mode" (ngModelChange)="setMode($event)"><option [ngValue]="0">{{ 'network.loopback' | text }}</option><option [ngValue]="1">{{ 'network.lan' | text }}</option></select>
       </label>
       <label class="td-network-field">{{ 'network.port' | text }}
         <span class="td-field-group mt-1.5"><input class="td-field" type="number" min="1" max="65535" [(ngModel)]="port" /><span class="td-network-unit">TCP</span></span>
@@ -56,15 +56,9 @@
     </div>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2">
-      <label class="td-network-toggle"><input type="checkbox" [(ngModel)]="httpsEnabled" /><span><strong>{{ 'network.https' | text }}</strong><small>{{ 'network.httpsHelp' | text }}</small></span></label>
-      <label class="td-network-toggle"><input type="checkbox" [(ngModel)]="allowInsecureHttp" /><span><strong>{{ 'network.insecureHttp' | text }}</strong><small>{{ 'network.insecureHttpHelp' | text }}</small></span></label>
+      <label class="td-network-toggle td-network-switch"><input class="td-network-switch-input" type="checkbox" role="switch" [ngModel]="httpsEnabled" (ngModelChange)="setHttpsEnabled($event)" /><span class="td-network-switch-control" aria-hidden="true"><i></i></span><span><strong>{{ 'network.https' | text }}</strong><small>{{ 'network.httpsHelp' | text }}</small></span></label>
+      <button type="button" class="td-network-toggle td-network-details-action" (click)="httpsInfoDialogOpen.set(true)"><span class="td-network-card-icon td-network-certificate-icon"><svg lucideIcon="badge-check" size="18" aria-hidden="true"></svg></span><span><strong>{{ 'network.certificateDetails' | text }}</strong><small>{{ (certificateConfigured ? 'network.certificateReadyHelp' : 'network.certificatePendingHelp') | text }}</small></span></button>
     </div>
-    @if (httpsEnabled) {
-      <div class="td-network-certificate-fields mt-4 grid gap-4 pt-4 sm:grid-cols-2">
-        <label class="td-network-field">{{ 'network.certificatePath' | text }}<input class="td-field mt-1.5" [(ngModel)]="certificatePath" /></label>
-        <label class="td-network-field">{{ 'network.certificatePassword' | text }}<input class="td-field mt-1.5" type="password" [(ngModel)]="certificatePassword" [placeholder]="'network.certificatePasswordPlaceholder' | text" /></label>
-      </div>
-    }
   </section>
 
   <section class="td-network-card td-network-action-card xl:col-span-2">
@@ -104,6 +98,29 @@
     <div class="flex shrink-0 flex-wrap gap-2"><button type="button" class="td-button-secondary" (click)="load()">{{ 'action.refresh' | text }}</button><button type="button" class="td-button-primary" (click)="restartDialogOpen.set(true)"><svg lucideIcon="rotate-cw" size="16" aria-hidden="true"></svg>{{ 'network.saveRestart' | text }}</button></div>
   </footer>
 </div>
+
+<td-confirmation-dialog [open]="httpsInfoDialogOpen()" (openChange)="httpsInfoDialogOpen.set($event)" title="network.managedCertificateTitle" confirmLabel="action.close" icon="badge-check" [hideCancel]="true" [wide]="true" (confirmed)="httpsInfoDialogOpen.set(false)">
+  <div class="td-network-certificate-summary">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div><h3>{{ 'network.certificateOverviewTitle' | text }}</h3><p>{{ 'network.managedCertificateHelp' | text }}</p></div>
+      <span class="td-network-certificate-status" [class.is-ready]="certificateConfigured">{{ (certificateConfigured ? 'network.certificateReady' : 'network.certificatePending') | text }}</span>
+    </div>
+    <div class="td-network-certificate-identities mt-4">
+      <strong>{{ 'network.certificateIdentities' | text }}</strong>
+      <div class="mt-2 flex flex-wrap gap-2">
+        @for (identity of displayedCertificateIdentities(); track identity) { <span class="td-network-chip">{{ identity }}</span> }
+      </div>
+    </div>
+    @if (certificateConfigured) {
+      <dl class="td-network-certificate-details mt-4">
+        <div><dt>{{ 'network.certificateFile' | text }}</dt><dd>{{ certificatePath }}</dd></div>
+        <div><dt>{{ 'network.certificateAuthority' | text }}</dt><dd>{{ certificateAuthorityPath }}</dd></div>
+        @if (certificateExpiryText()) { <div><dt>{{ 'network.certificateExpires' | text }}</dt><dd>{{ certificateExpiryText() }}</dd></div> }
+      </dl>
+    }
+    <p class="td-network-certificate-device-note mt-4"><svg lucideIcon="smartphone" size="16" aria-hidden="true"></svg><span>{{ 'network.certificateOtherDevices' | text }}</span></p>
+  </div>
+</td-confirmation-dialog>
 
 <td-confirmation-dialog [open]="restartDialogOpen()" (openChange)="restartDialogOpen.set($event)" title="network.restartTitle" [confirmLabel]="saving() ? 'network.restartWorking' : 'network.saveRestart'" icon="rotate-cw" [processing]="saving()" (confirmed)="saveAndRestart()">
   @if (saving()) {

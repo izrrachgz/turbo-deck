@@ -17,13 +17,19 @@ app.ConfigurePipeline();
 await app.StartAsync();
 IReadOnlyCollection<string> addresses = app.Services.GetRequiredService<IServer>()
     .Features.Get<IServerAddressesFeature>()?.Addresses.ToArray() ?? [];
-string? url = addresses.FirstOrDefault(address => address.Contains("127.0.0.1", StringComparison.Ordinal)) ?? addresses.FirstOrDefault();
+NetworkOptions network = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<NetworkOptions>>().Value;
+string? url = addresses.FirstOrDefault(address => address.StartsWith("http://127.0.0.1:", StringComparison.Ordinal)) ??
+    addresses.FirstOrDefault(address => address.Contains("127.0.0.1", StringComparison.Ordinal)) ??
+    addresses.FirstOrDefault();
 app.Logger.BackendReady(Environment.ProcessId, url ?? string.Empty, addresses.Count);
 Console.Out.WriteLine(JsonSerializer.Serialize(new
 {
     @event = "ready",
     url,
     addresses,
+    browserHostName = network.Mode == NetworkMode.Lan && network.DiscoveryEnabled
+        ? CertificateIdentityCatalog.FriendlyHostName
+        : null,
     pid = Environment.ProcessId
 }));
 Console.Out.Flush();

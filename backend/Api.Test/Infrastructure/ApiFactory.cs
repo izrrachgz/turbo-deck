@@ -9,12 +9,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public const string ControlToken = "test-control-token";
     private readonly string _dataDirectory = Path.Combine(Path.GetTempPath(), $"command-q-api-test-{Guid.NewGuid():N}");
     private readonly string[]? _addresses;
+    private readonly string? _certificateExpiresUtc;
 
     public string DataDirectory => _dataDirectory;
 
-    public ApiFactory(string[]? addresses = null)
+    public ApiFactory(string[]? addresses = null, string? certificateExpiresUtc = null)
     {
         _addresses = addresses;
+        _certificateExpiresUtc = certificateExpiresUtc;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -35,6 +37,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
             for (int index = 0; index < _addresses.Length; index++)
                 builder.UseSetting($"Api:Network:Addresses:{index}", _addresses[index]);
         }
+        if (_certificateExpiresUtc is not null)
+            builder.UseSetting("Api:Network:Https:CertificateExpiresUtc", _certificateExpiresUtc);
     }
 
     public HttpClient CreateAuthenticatedClient()

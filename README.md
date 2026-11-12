@@ -27,6 +27,11 @@ and a transparent OBS/browser visualizer with a public receive-only SignalR hub 
 responsive `/deck` client lets phones and tablets select a profile/page and trigger the same backend-owned queue from
 multiple devices. The connectivity slice adds optional Twitch Device Code authorization and EventSub
 reward bindings, editable LAN hosting, offline QR pairing payloads, and an explicitly confirmed Windows Firewall helper.
+When HTTPS is enabled, Turbo Deck creates a reusable local certificate authority plus a renewable server certificate
+covering localhost, the machine name, and concrete local-network addresses. It trusts the authority for the current
+Windows user and stores the authority and server certificate files under the backend application-data directory.
+With local-network discovery enabled, the browser clients are also available through the advertised
+`https://turbo-deck.local:<port>` hostname.
 The final desktop slice adds system-tray background operation, About/MIT, direct GitHub issue access, and a
 manual Check → Download → Verify → Apply update workflow that is enabled only in signed release builds.
 

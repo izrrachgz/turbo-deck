@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  LucideBadgeCheck,
   LucideLayoutGrid,
   LucideMonitorSmartphone,
   LucidePencil,
@@ -8,6 +9,7 @@ import {
   LucideRadio,
   LucideRotateCw,
   LucideShield,
+  LucideSmartphone,
   LucideTrash2,
   provideLucideIcons,
 } from '@lucide/angular';
@@ -70,6 +72,7 @@ describe('NetworkPage', () => {
         { provide: BackendApiService, useValue: api },
         { provide: I18nService, useValue: i18n },
         provideLucideIcons(
+          LucideBadgeCheck,
           LucideLayoutGrid,
           LucideMonitorSmartphone,
           LucidePencil,
@@ -78,6 +81,7 @@ describe('NetworkPage', () => {
           LucideRadio,
           LucideRotateCw,
           LucideShield,
+          LucideSmartphone,
           LucideTrash2,
         ),
       ],
@@ -126,6 +130,49 @@ describe('NetworkPage', () => {
     expect(api.getNetwork).toHaveBeenCalledOnce();
   });
 
+  it('submits HTTPS as a managed certificate operation without user-entered certificate secrets', async () => {
+    const api = {
+      updateNetwork: vi.fn().mockResolvedValue({ restartRequired: true }),
+      restartBackend: vi.fn().mockResolvedValue(undefined),
+      getNetwork: vi.fn().mockResolvedValue(networkSettings()),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new NetworkPage());
+    page.allowInsecureHttp = true;
+    page.setHttpsEnabled(true);
+
+    await page.saveAndRestart();
+
+    expect(page.allowInsecureHttp).toBe(false);
+    expect(api.updateNetwork).toHaveBeenCalledWith(expect.objectContaining({
+      allowInsecureHttp: false,
+      https: { enabled: true, certificatePath: '', certificatePassword: '' },
+    }));
+  });
+
+  it('acknowledges LAN HTTP automatically when HTTPS is disabled', async () => {
+    const api = {
+      createLanAccess: vi.fn().mockResolvedValue({ apiKey: 'test-key' }),
+      updateNetwork: vi.fn().mockResolvedValue({ restartRequired: true }),
+      restartBackend: vi.fn().mockResolvedValue(undefined),
+      getNetwork: vi.fn().mockResolvedValue(networkSettings()),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new NetworkPage());
+    page.setMode(1);
+    page.setHttpsEnabled(true);
+
+    page.setHttpsEnabled(false);
+    expect(page.allowInsecureHttp).toBe(true);
+    await page.saveAndRestart();
+
+    expect(api.updateNetwork).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 1,
+      allowInsecureHttp: true,
+      https: { enabled: false, certificatePath: '', certificatePassword: '' },
+    }));
+  });
+
   it('unblocks the UI and exposes the restart failure reason', async () => {
     const api = {
       updateNetwork: vi.fn().mockResolvedValue({ restartRequired: true }),
@@ -159,5 +206,11 @@ function networkSettings(): NetworkSettings {
     certificatePath: '',
     certificatePasswordConfigured: false,
     lanApiKeyConfigured: false,
+    httpsManaged: false,
+    certificateConfigured: false,
+    certificateAuthorityPath: '',
+    certificateIdentities: [],
+    suggestedCertificateIdentities: ['localhost', '127.0.0.1'],
+    certificateExpiresUtc: null,
   };
 }

@@ -84,6 +84,7 @@ internal static class ProgramExtensions
 
         builder.Services.AddSingleton<ISecurityTokenService, SecurityTokenService>();
         builder.Services.AddSingleton<IBackendSettingsStore, BackendSettingsStore>();
+        builder.Services.AddSingleton<IManagedHttpsCertificateService, ManagedHttpsCertificateService>();
         builder.Services.AddSingleton<IRealtimeConnectionRegistry, RealtimeConnectionRegistry>();
         builder.Services.AddSingleton<IRealtimePublisher, SignalRRealtimePublisher>();
         string twitchKeyDirectory = Path.Combine(runtime.DataDirectory, "Twitch", "keys");

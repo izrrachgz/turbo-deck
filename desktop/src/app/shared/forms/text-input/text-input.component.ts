@@ -1,4 +1,4 @@
-import { Component, Input, Optional, Self } from '@angular/core';
+import { Component, Input, Optional, Self, signal } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 
 @Component({
@@ -10,9 +10,10 @@ export class TextInputComponent implements ControlValueAccessor {
   @Input() label = '';
   @Input() placeholder = '';
   @Input() maxLength?: number;
+  @Input() autocomplete = 'off';
   readonly inputId = `td-text-${crypto.randomUUID()}`;
-  value = '';
-  disabled = false;
+  readonly value = signal('');
+  readonly disabled = signal(false);
 
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
@@ -22,7 +23,7 @@ export class TextInputComponent implements ControlValueAccessor {
   }
 
   writeValue(value: string | null): void {
-    this.value = value ?? '';
+    this.value.set(value ?? '');
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -34,12 +35,13 @@ export class TextInputComponent implements ControlValueAccessor {
   }
 
   setDisabledState(disabled: boolean): void {
-    this.disabled = disabled;
+    this.disabled.set(disabled);
   }
 
   handleInput(event: Event): void {
-    this.value = (event.target as HTMLInputElement).value;
-    this.onChange(this.value);
+    const value = (event.target as HTMLInputElement).value;
+    this.value.set(value);
+    this.onChange(value);
   }
 
   markTouched(): void {

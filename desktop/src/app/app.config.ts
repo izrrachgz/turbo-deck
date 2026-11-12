@@ -4,6 +4,7 @@ import { provideRouter, withComponentInputBinding, withHashLocation } from '@ang
 import {
   LucideArrowDown,
   LucideArrowUp,
+  LucideBadgeCheck,
   LucideBookOpen,
   LucideCheck,
   LucideChevronDown,
@@ -37,6 +38,7 @@ import {
   LucideSave,
   LucideSettings2,
   LucideShield,
+  LucideSmartphone,
   LucideTrash2,
   LucideUnlink,
   LucideUpload,
@@ -56,6 +58,7 @@ export const appConfig: ApplicationConfig = {
     provideLucideIcons(
       LucideArrowDown,
       LucideArrowUp,
+      LucideBadgeCheck,
       LucideBookOpen,
       LucideCheck,
       LucideChevronDown,
@@ -89,6 +92,7 @@ export const appConfig: ApplicationConfig = {
       LucideSave,
       LucideSettings2,
       LucideShield,
+      LucideSmartphone,
       LucideTrash2,
       LucideUnlink,
       LucideUpload,

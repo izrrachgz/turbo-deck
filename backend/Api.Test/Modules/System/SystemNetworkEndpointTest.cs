@@ -2,6 +2,7 @@ using Api.Models;
 using System.Net;
 using System.Net.Http.Json;
 using Api.Test.Infrastructure;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Api.Test.Modules.SystemApi;
 
@@ -21,6 +22,45 @@ public sealed class SystemNetworkEndpointTest
         Assert.Contains("localhost", settings.SuggestedAddresses);
         Assert.Contains("127.0.0.1", settings.SuggestedAddresses);
         Assert.Contains("0.0.0.0", settings.SuggestedAddresses);
+        Assert.Contains("localhost", settings.SuggestedCertificateIdentities);
+        Assert.Contains("127.0.0.1", settings.SuggestedCertificateIdentities);
+        Assert.Contains("turbo-deck.local", settings.SuggestedCertificateIdentities);
+        Assert.DoesNotContain("0.0.0.0", settings.SuggestedCertificateIdentities);
+    }
+
+    [Fact]
+    public async Task Enabling_https_generates_and_persists_a_managed_local_certificate()
+    {
+        await using var factory = new ApiFactory();
+        using HttpClient client = factory.CreateAuthenticatedClient();
+
+        HttpResponseMessage response = await client.PutAsJsonAsync(
+            "/system/network",
+            CreateRequest(["127.0.0.1"], httpsEnabled: true),
+            TestContext.Current.CancellationToken);
+
+        response.EnsureSuccessStatusCode();
+        SettingsChangedResponse? result = await response.Content.ReadFromJsonAsync<SettingsChangedResponse>(
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(result?.Certificate);
+        Assert.True(result.RestartRequired);
+        Assert.False(result.Certificate.TrustedOnCurrentComputer);
+        Assert.Contains("localhost", result.Certificate.Identities);
+        Assert.Contains("127.0.0.1", result.Certificate.Identities);
+        Assert.Contains("turbo-deck.local", result.Certificate.Identities);
+        Assert.StartsWith(Path.Combine(factory.DataDirectory, "Certificates"), result.Certificate.CertificatePath);
+        Assert.True(File.Exists(result.Certificate.CertificatePath));
+        Assert.True(File.Exists(result.Certificate.CertificateAuthorityPath));
+
+        using X509Certificate2 authority = X509CertificateLoader.LoadCertificateFromFile(
+            result.Certificate.CertificateAuthorityPath);
+        X509BasicConstraintsExtension? constraints = authority.Extensions
+            .OfType<X509BasicConstraintsExtension>()
+            .SingleOrDefault();
+        Assert.True(constraints?.CertificateAuthority);
+        Assert.Contains("\"managed\": true", await File.ReadAllTextAsync(
+            Path.Combine(factory.DataDirectory, "backendsettings.json"),
+            TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -35,6 +75,21 @@ public sealed class SystemNetworkEndpointTest
 
         Assert.NotNull(settings);
         Assert.Equal(["127.0.0.1"], settings.Addresses);
+    }
+
+    [Fact]
+    public async Task Network_settings_serialize_a_configuration_bound_certificate_expiry_as_utc()
+    {
+        await using var factory = new ApiFactory(certificateExpiresUtc: "2027-11-12T09:07:00Z");
+        using HttpClient client = factory.CreateAuthenticatedClient();
+
+        NetworkSettingsResponse? settings = await client.GetFromJsonAsync<NetworkSettingsResponse>(
+            "/system/network",
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(settings?.CertificateExpiresUtc);
+        Assert.Equal(DateTimeKind.Utc, settings.CertificateExpiresUtc.Value.Kind);
+        Assert.Equal(new DateTime(2027, 11, 12, 9, 7, 0, DateTimeKind.Utc), settings.CertificateExpiresUtc.Value);
     }
 
     [Fact]
@@ -84,7 +139,10 @@ public sealed class SystemNetworkEndpointTest
         }
     }
 
-    private static object CreateRequest(string[] addresses, string[]? corsAllowedOrigins = null) => new
+    private static object CreateRequest(
+        string[] addresses,
+        string[]? corsAllowedOrigins = null,
+        bool httpsEnabled = false) => new
     {
         mode = 0,
         addresses,
@@ -93,6 +151,6 @@ public sealed class SystemNetworkEndpointTest
         instanceName = "Turbo Deck Backend",
         corsAllowedOrigins = corsAllowedOrigins ?? [],
         allowInsecureHttp = false,
-        https = new { enabled = false, certificatePath = string.Empty, certificatePassword = string.Empty }
+        https = new { enabled = httpsEnabled, certificatePath = string.Empty, certificatePassword = string.Empty }
     };
 }

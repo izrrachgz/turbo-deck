@@ -1,5 +1,6 @@
-import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import {
@@ -46,6 +47,8 @@ export class DeckPage implements OnInit {
   private readonly api = inject(BackendApiService);
   private readonly fb = inject(FormBuilder);
   private readonly preferences = inject(PreferencesService);
+  private readonly sanitizer = inject(DomSanitizer);
+  private cellEditorSession = 0;
 
   readonly profiles = signal<readonly ProfileModel[]>([]);
   readonly pages = signal<readonly DeckPageModel[]>([]);
@@ -72,7 +75,6 @@ export class DeckPage implements OnInit {
   }));
 
   readonly profileForm = this.fb.nonNullable.group({ name: ['', [Validators.required, Validators.maxLength(100)]] });
-  readonly imageMediaAssets = computed(() => this.mediaAssets().filter((asset) => asset.kind === 'image'));
   readonly cellForm = this.fb.nonNullable.group({
     label: ['', Validators.maxLength(80)],
     enabled: [true],
@@ -158,9 +160,9 @@ export class DeckPage implements OnInit {
       return;
     }
     const cell = this.cellAt(position);
-    this.cellPreview?.stop();
+    this.disposeCellEditor();
     this.selectedPosition.set(position);
-    this.cellForm.setValue({
+    this.cellForm.reset({
       label: cell?.label ?? '',
       enabled: cell?.enabled ?? true,
       mediaAssetId: cell?.mediaAssetId?.toString() ?? '',
@@ -178,6 +180,9 @@ export class DeckPage implements OnInit {
       animationOutDurationSeconds: (cell?.animationOutDurationMilliseconds ?? 0) / 1000,
       queueOverride: cell?.queuePriority === 'override',
     });
+    this.cellForm.markAsPristine();
+    this.cellForm.markAsUntouched();
+    this.error.set('');
     this.cellDialogOpen.set(true);
   }
 
@@ -220,12 +225,14 @@ export class DeckPage implements OnInit {
   }
 
   async uploadMedia(): Promise<void> {
+    const editorSession = this.cellEditorSession;
     this.uploadingMedia.set(true);
     this.error.set('');
     try {
       const created = await this.api.uploadMedia();
       if (!created) return;
-      this.mediaAssets.update((assets) => [created, ...assets]);
+      this.rememberMediaAsset(created);
+      if (!this.cellDialogOpen() || editorSession !== this.cellEditorSession) return;
       this.cellForm.controls.mediaAssetId.setValue(created.id.toString());
     } catch (error) {
       this.error.set(this.message(error));
@@ -235,13 +242,15 @@ export class DeckPage implements OnInit {
   }
 
   async uploadThumbnail(): Promise<void> {
+    const editorSession = this.cellEditorSession;
     this.uploadingThumbnail.set(true);
     this.error.set('');
     try {
       const created = await this.api.uploadMedia(undefined, 'image');
       if (!created) return;
       if (created.kind !== 'image') throw new Error('A cell background must use an image media asset.');
-      this.mediaAssets.update((assets) => [created, ...assets]);
+      this.rememberMediaAsset(created);
+      if (!this.cellDialogOpen() || editorSession !== this.cellEditorSession) return;
       this.cellForm.controls.thumbnailMediaAssetId.setValue(created.id.toString());
     } catch (error) {
       this.error.set(this.message(error));
@@ -260,6 +269,17 @@ export class DeckPage implements OnInit {
     return this.mediaAssets().find((asset) => asset.id === id);
   }
 
+  selectedThumbnail(): MediaAssetModel | undefined {
+    const id = Number(this.cellForm.controls.thumbnailMediaAssetId.value);
+    return this.mediaAssets().find((asset) => asset.id === id && asset.kind === 'image');
+  }
+
+  selectedThumbnailBackground(): SafeStyle | null {
+    const id = Number(this.cellForm.controls.thumbnailMediaAssetId.value);
+    if (!Number.isSafeInteger(id) || id < 1) return null;
+    return this.sanitizer.bypassSecurityTrustStyle(`url("turbo-deck-media://thumbnail/${id}")`);
+  }
+
   previewDisplayDuration(): number {
     const duration = this.cellForm.controls.imageDuration.value;
     return duration === 'permanent' ? 5000 : Number(duration);
@@ -276,7 +296,7 @@ export class DeckPage implements OnInit {
   }
 
   setCellDialogOpen(open: boolean): void {
-    if (!open) this.cellPreview?.stop();
+    if (!open) this.disposeCellEditor();
     this.cellDialogOpen.set(open);
   }
 
@@ -340,5 +360,33 @@ export class DeckPage implements OnInit {
 
   private imageDurationValue(milliseconds?: number): '3000' | '5000' | '10000' {
     return milliseconds === 3000 || milliseconds === 10000 ? String(milliseconds) as '3000' | '10000' : '5000';
+  }
+
+  private disposeCellEditor(): void {
+    this.cellPreview?.stop();
+    this.cellEditorSession += 1;
+    this.selectedPosition.set(null);
+    this.cellForm.reset({
+      label: '',
+      enabled: true,
+      mediaAssetId: '',
+      thumbnailMediaAssetId: '',
+      volume: 1,
+      playbackRate: 1,
+      pitchSemitones: 0,
+      imageDuration: '5000',
+      displaySize: 'medium',
+      animationInType: 'none',
+      animationInDurationSeconds: 0,
+      animationOutType: 'none',
+      animationOutDurationSeconds: 0,
+      queueOverride: false,
+    });
+    this.cellForm.markAsPristine();
+    this.cellForm.markAsUntouched();
+  }
+
+  private rememberMediaAsset(created: MediaAssetModel): void {
+    this.mediaAssets.update((assets) => [created, ...assets.filter((asset) => asset.id !== created.id)]);
   }
 }

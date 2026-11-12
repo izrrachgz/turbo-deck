@@ -33,9 +33,17 @@ internal sealed class HttpsOptions
 {
     public bool Enabled { get; init; }
 
+    public bool Managed { get; init; }
+
     public string CertificatePath { get; init; } = string.Empty;
 
     public string CertificatePassword { get; init; } = string.Empty;
+
+    public string CertificateAuthorityPath { get; init; } = string.Empty;
+
+    public string[] CertificateIdentities { get; init; } = [];
+
+    public DateTime? CertificateExpiresUtc { get; init; }
 }
 
 internal sealed class SecurityOptions

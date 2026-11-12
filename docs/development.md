@@ -68,6 +68,15 @@ features continue to work when Twitch is unconfigured or offline.
 LAN pairing rotates the LAN API key and generates the QR entirely inside Angular. Firewall add/remove requests are
 user-triggered only; do not invoke `electron/helpers/configure-firewall.ps1` during automated development or tests.
 
+Enabling HTTPS in Network & Firewall provisions a private Turbo Deck local authority and a server PFX under
+`<backend-data>/Certificates`. The server certificate includes loopback, host-name, configured listener, and active LAN
+identities, and is renewed when its identity set changes or it approaches expiry. Windows trusts the authority in the
+current user's Root store; trusted phones and tablets must import `turbo-deck-local-ca.cer` themselves. Electron keeps
+an ephemeral HTTP loopback control listener so its private API and SignalR traffic never depend on browser certificate
+trust, while browser-facing LAN listeners remain HTTPS.
+When discovery is enabled, mDNS publishes `turbo-deck.local` with active LAN IPv4 records and the managed certificate
+includes that DNS identity. This provides a stable friendly browser address without editing hosts files.
+
 Closing the desktop window hides it to the system tray. Use the tray Quit action or About → Quit Turbo Deck when you
 need the backend process to stop. The development Update Wizard is intentionally disabled. Local packaged artifacts are
 marked unsigned test builds; only release packages built with required platform signing enable update download/apply.
