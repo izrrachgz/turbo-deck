@@ -21,6 +21,7 @@ export class ConfirmationDialogComponent implements AfterViewChecked {
   @Input() destructive = false;
   @Input() processing = false;
   @Input() confirmDisabled = false;
+  @Input() hideCancel = false;
   @Input() wide = false;
   @Input() allowOverflow = false;
   @Output() openChange = new EventEmitter<boolean>();

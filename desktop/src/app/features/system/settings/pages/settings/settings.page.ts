@@ -24,6 +24,7 @@ import {
   standalone: true,
   imports: [LucideDynamicIcon, ReactiveFormsModule, TextPipe, TimeZoneAutocompleteComponent],
   templateUrl: './settings.page.html',
+  styleUrl: './settings.page.css',
 })
 export class SettingsPage implements HasUnsavedChanges, OnDestroy {
   private readonly fb = inject(FormBuilder);

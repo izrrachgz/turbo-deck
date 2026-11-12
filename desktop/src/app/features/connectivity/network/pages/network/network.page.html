@@ -2,47 +2,108 @@
 @if (error()) { <p class="td-alert td-alert-danger">{{ error() }}</p> }
 @if (notice()) { <p class="td-alert td-alert-success">{{ notice() }}</p> }
 
-<section class="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
-  <div class="grid gap-4 md:grid-cols-2">
-    <label class="text-sm font-medium text-slate-700">{{ 'network.mode' | text }}<select class="td-field mt-1.5" [(ngModel)]="mode"><option [ngValue]="0">{{ 'network.loopback' | text }}</option><option [ngValue]="1">{{ 'network.lan' | text }}</option></select></label>
-    <label class="text-sm font-medium text-slate-700">{{ 'network.port' | text }}<input class="td-field mt-1.5" type="number" min="1" max="65535" [(ngModel)]="port" /></label>
-    <div class="md:col-span-2">
-      <div class="flex items-center justify-between gap-3"><span class="text-sm font-medium text-slate-700">{{ 'network.addresses' | text }}</span><button type="button" class="td-button-secondary" (click)="openAddressDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageAddresses' | text }}</button></div>
-      <div class="mt-1.5 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
-        @for (address of addresses; track address) { <span class="rounded bg-slate-200 px-2 py-1 font-mono text-xs text-slate-800">{{ address }}</span> }
-      </div>
-      <p class="mt-1.5 text-xs text-slate-500">{{ 'network.addressesHelp' | text }}</p>
-    </div>
-    <label class="text-sm font-medium text-slate-700">{{ 'network.instanceName' | text }}<input class="td-field mt-1.5" maxlength="100" [ngModel]="instanceName()" (ngModelChange)="instanceName.set($event)" /><span class="mt-1.5 block text-xs font-normal text-slate-500">{{ 'network.instanceNameHelp' | text }}</span></label>
-    <label class="flex items-center gap-2 self-end pb-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="discoveryEnabled" /> {{ 'network.discovery' | text }}</label>
-    <div class="md:col-span-2">
-      <div class="flex items-center justify-between gap-3"><span class="text-sm font-medium text-slate-700">{{ 'network.corsOrigins' | text }}</span><button type="button" class="td-button-secondary" (click)="openCorsOriginDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageCorsOrigins' | text }}</button></div>
-      <div class="mt-1.5 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
-        @for (origin of corsAllowedOrigins; track origin) { <span class="rounded bg-slate-200 px-2 py-1 font-mono text-xs text-slate-800">{{ origin }}</span> }
-        @if (!corsAllowedOrigins.length) { <span class="text-sm text-slate-500">{{ 'network.noCorsOrigins' | text }}</span> }
-      </div>
-      <p class="mt-1.5 text-xs text-slate-500">{{ 'network.corsOriginsHelp' | text }}</p>
-    </div>
-    <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="httpsEnabled" /> {{ 'network.https' | text }}</label>
-    <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="allowInsecureHttp" /> {{ 'network.insecureHttp' | text }}</label>
-    @if (httpsEnabled) { <label class="text-sm font-medium text-slate-700">{{ 'network.certificatePath' | text }}<input class="td-field mt-1.5" [(ngModel)]="certificatePath" /></label><label class="text-sm font-medium text-slate-700">{{ 'network.certificatePassword' | text }}<input class="td-field mt-1.5" type="password" [(ngModel)]="certificatePassword" placeholder="Leave blank to keep current" /></label> }
-  </div>
-  <div class="mt-5 flex flex-wrap gap-2"><button type="button" class="td-button-primary" (click)="restartDialogOpen.set(true)">{{ 'network.saveRestart' | text }}</button><button type="button" class="td-button-secondary" (click)="load()">{{ 'action.refresh' | text }}</button></div>
-</section>
+<div class="grid gap-5 xl:grid-cols-6">
+  <section class="td-network-card xl:col-span-3">
+    <header class="td-network-card-header">
+      <span class="td-network-card-icon"><svg lucideIcon="radio" size="20" aria-hidden="true"></svg></span>
+      <div class="min-w-0 flex-1"><h2>{{ 'network.hostSettingsTitle' | text }}</h2><p>{{ 'network.hostSettingsDescription' | text }}</p></div>
+      <span class="td-network-status"><i aria-hidden="true"></i>{{ (mode === 1 ? 'network.lan' : 'network.loopback') | text }}</span>
+    </header>
 
-<section class="mt-6 grid gap-6 lg:grid-cols-2">
-  <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm"><h2 class="font-semibold text-slate-950">{{ 'network.mobileTitle' | text }}</h2><p class="mt-1 text-sm text-slate-600">{{ 'network.mobileDescription' | text }}</p><button type="button" class="td-button-primary mt-4" (click)="lanDialogOpen.set(true)">{{ 'network.generatePairing' | text }}</button>@if (lanAccess(); as pairing) { <div class="mt-4 grid justify-items-center gap-3"><img class="size-64" [src]="pairing.qr" alt="LAN pairing QR code" /><input class="td-field font-mono text-xs" readonly [value]="pairing.url" (focus)="$any($event.target).select()" /><p class="text-xs text-amber-700">{{ 'network.pairingWarning' | text }}</p></div> }</div>
-  <div class="rounded-md border border-slate-200 bg-white p-4 shadow-sm"><h2 class="font-semibold text-slate-950">{{ 'network.firewallTitle' | text }}</h2><p class="mt-1 text-sm text-slate-600">{{ 'network.firewallDescription' | text }}</p><div class="mt-4 flex gap-2"><button type="button" class="td-button-primary" [disabled]="port < 1" (click)="confirmFirewall('add')">{{ 'network.firewallAdd' | text }}</button><button type="button" class="td-button-secondary" [disabled]="port < 1" (click)="confirmFirewall('remove')">{{ 'network.firewallRemove' | text }}</button></div></div>
-</section>
+    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      <label class="td-network-field">{{ 'network.mode' | text }}
+        <select class="td-field mt-1.5" [(ngModel)]="mode"><option [ngValue]="0">{{ 'network.loopback' | text }}</option><option [ngValue]="1">{{ 'network.lan' | text }}</option></select>
+      </label>
+      <label class="td-network-field">{{ 'network.port' | text }}
+        <span class="td-field-group mt-1.5"><input class="td-field" type="number" min="1" max="65535" [(ngModel)]="port" /><span class="td-network-unit">TCP</span></span>
+      </label>
+    </div>
 
-<section class="mt-6 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-  <h2 class="font-semibold text-slate-950">{{ 'network.hostedClientsTitle' | text }}</h2>
-  <p class="mt-1 text-sm text-slate-600">{{ 'network.hostedClientsDescription' | text }}</p>
-  <div class="mt-4 flex flex-wrap gap-2">
-    <button type="button" class="td-button-primary" (click)="openVisualizer()"><svg lucideIcon="monitor-smartphone" size="16" aria-hidden="true"></svg>{{ 'network.openVisualizer' | text }}</button>
-    <button type="button" class="td-button-secondary" (click)="openDeckExplorer()"><svg lucideIcon="layout-grid" size="16" aria-hidden="true"></svg>{{ 'network.openDeckExplorer' | text }}</button>
-  </div>
-</section>
+    <div class="td-network-config-block mt-4">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div><h3>{{ 'network.addresses' | text }}</h3><p>{{ 'network.addressesHelp' | text }}</p></div>
+        <button type="button" class="td-button-secondary shrink-0" (click)="openAddressDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageAddresses' | text }}</button>
+      </div>
+      <div class="td-network-chip-list mt-3">
+        @for (address of addresses; track address) { <span class="td-network-chip">{{ address }}</span> }
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(17rem,auto)] sm:items-start">
+      <label class="td-network-field">{{ 'network.instanceName' | text }}
+        <input class="td-field mt-1.5" maxlength="100" [ngModel]="instanceName()" (ngModelChange)="instanceName.set($event)" />
+        <span class="td-network-help">{{ 'network.instanceNameHelp' | text }}</span>
+      </label>
+      <label class="td-network-toggle td-network-discovery-toggle"><input type="checkbox" [(ngModel)]="discoveryEnabled" /><span><strong>{{ 'network.discovery' | text }}</strong><small>{{ 'network.discoveryHelp' | text }}</small></span></label>
+    </div>
+  </section>
+
+  <section class="td-network-card xl:col-span-3">
+    <header class="td-network-card-header">
+      <span class="td-network-card-icon"><svg lucideIcon="shield" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'network.browserAccessTitle' | text }}</h2><p>{{ 'network.browserAccessDescription' | text }}</p></div>
+    </header>
+
+    <div class="td-network-config-block mt-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div><h3>{{ 'network.corsOrigins' | text }}</h3><p>{{ 'network.corsOriginsHelp' | text }}</p></div>
+        <button type="button" class="td-button-secondary shrink-0" (click)="openCorsOriginDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageCorsOrigins' | text }}</button>
+      </div>
+      <div class="td-network-chip-list mt-3">
+        @for (origin of corsAllowedOrigins; track origin) { <span class="td-network-chip">{{ origin }}</span> }
+        @if (!corsAllowedOrigins.length) { <span class="td-network-empty">{{ 'network.noCorsOrigins' | text }}</span> }
+      </div>
+    </div>
+
+    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+      <label class="td-network-toggle"><input type="checkbox" [(ngModel)]="httpsEnabled" /><span><strong>{{ 'network.https' | text }}</strong><small>{{ 'network.httpsHelp' | text }}</small></span></label>
+      <label class="td-network-toggle"><input type="checkbox" [(ngModel)]="allowInsecureHttp" /><span><strong>{{ 'network.insecureHttp' | text }}</strong><small>{{ 'network.insecureHttpHelp' | text }}</small></span></label>
+    </div>
+    @if (httpsEnabled) {
+      <div class="td-network-certificate-fields mt-4 grid gap-4 pt-4 sm:grid-cols-2">
+        <label class="td-network-field">{{ 'network.certificatePath' | text }}<input class="td-field mt-1.5" [(ngModel)]="certificatePath" /></label>
+        <label class="td-network-field">{{ 'network.certificatePassword' | text }}<input class="td-field mt-1.5" type="password" [(ngModel)]="certificatePassword" [placeholder]="'network.certificatePasswordPlaceholder' | text" /></label>
+      </div>
+    }
+  </section>
+
+  <section class="td-network-card td-network-action-card xl:col-span-2">
+    <header class="td-network-card-header">
+      <span class="td-network-card-icon"><svg lucideIcon="monitor-smartphone" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'network.hostedClientsTitle' | text }}</h2><p>{{ 'network.hostedClientsDescription' | text }}</p></div>
+    </header>
+    <div class="mt-auto grid gap-2 pt-5">
+      <button type="button" class="td-button-primary justify-center" (click)="openVisualizer()"><svg lucideIcon="monitor-smartphone" size="16" aria-hidden="true"></svg>{{ 'network.openVisualizer' | text }}</button>
+      <button type="button" class="td-button-secondary justify-center" (click)="openDeckExplorer()"><svg lucideIcon="layout-grid" size="16" aria-hidden="true"></svg>{{ 'network.openDeckExplorer' | text }}</button>
+    </div>
+  </section>
+
+  <section class="td-network-card td-network-action-card xl:col-span-2">
+    <header class="td-network-card-header">
+      <span class="td-network-card-icon"><svg lucideIcon="qr-code" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'network.mobileTitle' | text }}</h2><p>{{ 'network.mobileDescription' | text }}</p></div>
+    </header>
+    <div class="td-network-utility-status mt-5"><span>{{ 'network.pairingReady' | text }}</span><strong>{{ mode === 1 ? ('network.lan' | text) : ('network.loopback' | text) }}</strong></div>
+    <button type="button" class="td-button-primary mt-4 justify-center" (click)="lanDialogOpen.set(true)">{{ (lanAccess() ? 'network.viewPairing' : 'network.generatePairing') | text }}</button>
+  </section>
+
+  <section class="td-network-card td-network-action-card xl:col-span-2">
+    <header class="td-network-card-header">
+      <span class="td-network-card-icon"><svg lucideIcon="shield" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'network.firewallTitle' | text }}</h2><p>{{ 'network.firewallDescription' | text }}</p></div>
+    </header>
+    <div class="td-network-utility-status mt-5"><span>{{ 'network.firewallPort' | text }}</span><strong>{{ port || '—' }} / TCP</strong></div>
+    <div class="mt-auto grid gap-2 pt-4">
+      <button type="button" class="td-button-primary justify-center" [disabled]="port < 1" (click)="confirmFirewall('add')">{{ 'network.firewallAdd' | text }}</button>
+      <button type="button" class="td-button-secondary justify-center" [disabled]="port < 1" (click)="confirmFirewall('remove')">{{ 'network.firewallRemove' | text }}</button>
+    </div>
+  </section>
+
+  <footer class="td-network-save-bar xl:col-span-6">
+    <div class="flex min-w-0 items-center gap-3"><span class="td-network-save-indicator" aria-hidden="true"></span><div class="min-w-0"><strong>{{ 'network.restartRequiredTitle' | text }}</strong><p>{{ 'network.restartRequiredHelp' | text }}</p></div></div>
+    <div class="flex shrink-0 flex-wrap gap-2"><button type="button" class="td-button-secondary" (click)="load()">{{ 'action.refresh' | text }}</button><button type="button" class="td-button-primary" (click)="restartDialogOpen.set(true)"><svg lucideIcon="rotate-cw" size="16" aria-hidden="true"></svg>{{ 'network.saveRestart' | text }}</button></div>
+  </footer>
+</div>
 
 <td-confirmation-dialog [open]="restartDialogOpen()" (openChange)="restartDialogOpen.set($event)" title="network.restartTitle" [confirmLabel]="saving() ? 'network.restartWorking' : 'network.saveRestart'" icon="rotate-cw" [processing]="saving()" (confirmed)="saveAndRestart()">
   @if (saving()) {
@@ -75,7 +136,18 @@
   <button type="button" class="td-button-secondary mt-3" (click)="addCorsOrigin()"><svg lucideIcon="plus" size="16" aria-hidden="true"></svg>{{ 'network.addCorsOrigin' | text }}</button>
   <p class="mt-3 text-xs text-slate-500">{{ 'network.corsOriginExample' | text }}</p>
 </td-confirmation-dialog>
-<td-confirmation-dialog [open]="lanDialogOpen()" (openChange)="lanDialogOpen.set($event)" title="network.pairingTitle" confirmLabel="network.generatePairing" icon="qr-code" [destructive]="true" (confirmed)="createLanPairing()"><p>{{ 'network.pairingMessage' | text }}</p></td-confirmation-dialog>
+<td-confirmation-dialog [open]="lanDialogOpen()" (openChange)="lanDialogOpen.set($event)" [title]="lanAccess() ? 'network.pairingResultTitle' : 'network.pairingTitle'" [confirmLabel]="lanAccess() ? 'action.close' : 'network.generatePairing'" icon="qr-code" [destructive]="!lanAccess()" [hideCancel]="!!lanAccess()" (confirmed)="confirmLanPairingDialog()">
+  @if (lanAccess(); as pairing) {
+    <div class="td-network-pairing-dialog">
+      <img [src]="pairing.qr" alt="LAN pairing QR code" />
+      <label><span>{{ 'network.pairingAddress' | text }}</span><input class="td-field font-mono text-sm" readonly [value]="pairing.url" (focus)="$any($event.target).select()" /></label>
+      <p>{{ 'network.pairingWarning' | text }}</p>
+      <button type="button" class="td-button-secondary justify-center" (click)="prepareNewLanPairing()">{{ 'network.generateNewPairing' | text }}</button>
+    </div>
+  } @else {
+    <p>{{ 'network.pairingMessage' | text }}</p>
+  }
+</td-confirmation-dialog>
 <td-confirmation-dialog [open]="firewallDialogOpen()" (openChange)="firewallDialogOpen.set($event)" title="network.firewallConfirmTitle" confirmLabel="action.confirm" icon="shield" [processing]="applyingFirewall()" (confirmed)="applyFirewall()"><p>{{ 'network.firewallConfirmMessage' | text }}</p></td-confirmation-dialog>
 <td-confirmation-dialog [open]="addressDialogOpen()" (openChange)="addressDialogOpen.set($event)" title="network.addressDialogTitle" confirmLabel="action.save" icon="radio" [confirmDisabled]="addressEditorInvalid()" (confirmed)="saveAddresses()">
   <p class="mb-4 text-sm text-slate-600">{{ 'network.addressDialogDescription' | text }}</p>

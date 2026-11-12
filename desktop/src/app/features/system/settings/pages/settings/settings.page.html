@@ -3,35 +3,75 @@
 @if (message()) { <p class="td-alert td-alert-success">{{ message() | text }}</p> }
 @if (error()) { <p class="td-alert td-alert-danger">{{ error() | text }}</p> }
 
-<form class="space-y-5 rounded-md border border-slate-200 bg-white p-5 shadow-sm" [formGroup]="form" (ngSubmit)="save()">
-  <div class="grid gap-5 md:grid-cols-2">
-    <label class="block text-sm font-medium text-slate-700">{{ 'settings.language' | text }}
-      <select class="td-field mt-1.5" formControlName="culture" (change)="preview()"><option value="en-US">English — en-US</option><option value="es-ES">Español — es-ES</option></select>
-    </label>
-    <fieldset><legend class="mb-1.5 text-sm font-medium text-slate-700">{{ 'settings.theme' | text }}</legend><div class="inline-flex rounded-md border border-slate-200 p-1">
-      <button type="button" class="td-segment" [class.td-segment-active]="form.controls.theme.value === 'dark'" (click)="setTheme('dark')">{{ 'settings.dark' | text }}</button>
-      <button type="button" class="td-segment" [class.td-segment-active]="form.controls.theme.value === 'light'" (click)="setTheme('light')">{{ 'settings.light' | text }}</button>
-    </div></fieldset>
-  </div>
+<form class="grid gap-5 xl:grid-cols-2" [formGroup]="form" (ngSubmit)="save()">
+  <section class="td-settings-card xl:col-span-2">
+    <header class="td-settings-card-header">
+      <span class="td-settings-card-icon"><svg lucideIcon="languages" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'settings.personalization' | text }}</h2><p>{{ 'settings.personalizationHelp' | text }}</p></div>
+    </header>
 
-  <fieldset><legend class="mb-2 text-sm font-medium text-slate-700">{{ 'settings.palette' | text }}</legend><div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-    @for (palette of availablePalettes; track palette.id) {
-      <label class="cursor-pointer rounded-md border border-slate-200 bg-slate-50 p-3 text-sm font-semibold transition hover:border-teal-500" [class.ring-2]="form.controls.palette.value === palette.id">
-        <input type="radio" class="sr-only" formControlName="palette" [value]="palette.id" (change)="preview()" />{{ palette.labelKey | text }}
+    <div class="mt-5 grid gap-5 md:grid-cols-2">
+      <label class="block text-sm font-medium text-slate-700">{{ 'settings.language' | text }}
+        <select class="td-field mt-1.5" formControlName="culture" (change)="preview()"><option value="en-US">English — en-US</option><option value="es-ES">Español — es-ES</option></select>
       </label>
-    }
-  </div></fieldset>
+      <fieldset>
+        <legend class="mb-1.5 text-sm font-medium text-slate-700">{{ 'settings.theme' | text }}</legend>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" class="td-theme-option" [class.td-theme-option-active]="form.controls.theme.value === 'dark'" (click)="setTheme('dark')"><span class="td-theme-preview td-theme-preview-dark" aria-hidden="true"><i></i><i></i><i></i></span><span>{{ 'settings.dark' | text }}</span></button>
+          <button type="button" class="td-theme-option" [class.td-theme-option-active]="form.controls.theme.value === 'light'" (click)="setTheme('light')"><span class="td-theme-preview td-theme-preview-light" aria-hidden="true"><i></i><i></i><i></i></span><span>{{ 'settings.light' | text }}</span></button>
+        </div>
+      </fieldset>
+    </div>
 
-  <div class="grid gap-5 md:grid-cols-2">
-    <div class="min-w-0">
+    <fieldset class="mt-6">
+      <legend class="mb-2 text-sm font-medium text-slate-700">{{ 'settings.palette' | text }}</legend>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        @for (palette of availablePalettes; track palette.id) {
+          <label class="td-palette-option" [class.td-palette-option-active]="form.controls.palette.value === palette.id">
+            <input type="radio" class="sr-only" formControlName="palette" [value]="palette.id" (change)="preview()" />
+            <span [class]="'td-palette-preview td-palette-preview-' + palette.id" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="min-w-0 flex-1 truncate font-semibold">{{ palette.labelKey | text }}</span>
+            @if (form.controls.palette.value === palette.id) { <svg lucideIcon="check" size="16" aria-hidden="true"></svg> }
+          </label>
+        }
+      </div>
+    </fieldset>
+  </section>
+
+  <section class="td-settings-card">
+    <header class="td-settings-card-header">
+      <span class="td-settings-card-icon"><svg lucideIcon="clock" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'settings.regional' | text }}</h2><p>{{ 'settings.regionalHelp' | text }}</p></div>
+    </header>
+    <div class="mt-5 min-w-0">
       <td-time-zone-autocomplete formControlName="timeZone" />
       @if (form.controls.timeZone.touched && form.controls.timeZone.invalid) {
         <p class="mt-1 text-sm text-red-700">{{ 'settings.invalidTimeZone' | text }}</p>
       }
     </div>
-    <label class="block text-sm font-medium text-slate-700">{{ 'settings.queueCapacity' | text }}<input type="number" class="td-field mt-1.5" formControlName="queueCapacity" min="1" max="1000" /></label>
-    <label class="block text-sm font-medium text-slate-700">{{ 'settings.safeMargin' | text }}<input type="number" class="td-field mt-1.5" formControlName="visualizerSafeMargin" min="0" max="1000" /></label>
-  </div>
+  </section>
 
-  <div class="flex justify-end border-t border-slate-200 pt-4"><button type="submit" class="td-button-primary" [disabled]="form.invalid || saving()"><svg lucideIcon="save" size="16" aria-hidden="true"></svg>{{ 'action.save' | text }}</button></div>
+  <section class="td-settings-card">
+    <header class="td-settings-card-header">
+      <span class="td-settings-card-icon"><svg lucideIcon="list-tree" size="20" aria-hidden="true"></svg></span>
+      <div><h2>{{ 'settings.playbackDefaults' | text }}</h2><p>{{ 'settings.playbackDefaultsHelp' | text }}</p></div>
+    </header>
+    <div class="mt-5 grid gap-4 sm:grid-cols-2">
+      <label class="td-value-setting">
+        <span class="font-semibold text-slate-900">{{ 'settings.queueCapacity' | text }}</span>
+        <span class="mt-1 text-sm text-slate-600">{{ 'settings.queueCapacityHelp' | text }}</span>
+        <span class="td-field-group mt-3"><input type="number" class="td-field" formControlName="queueCapacity" min="1" max="1000" /><span class="td-settings-unit">{{ 'settings.items' | text }}</span></span>
+      </label>
+      <label class="td-value-setting">
+        <span class="font-semibold text-slate-900">{{ 'settings.safeMargin' | text }}</span>
+        <span class="mt-1 text-sm text-slate-600">{{ 'settings.safeMarginHelp' | text }}</span>
+        <span class="td-field-group mt-3"><input type="number" class="td-field" formControlName="visualizerSafeMargin" min="0" max="1000" /><span class="td-settings-unit">{{ 'settings.pixels' | text }}</span></span>
+      </label>
+    </div>
+  </section>
+
+  <footer class="td-settings-save-bar xl:col-span-2">
+    <div class="flex min-w-0 items-center gap-3"><span class="td-settings-save-indicator" [class.td-settings-save-indicator-dirty]="form.dirty" aria-hidden="true"></span><p class="truncate text-sm text-slate-600">{{ (form.dirty ? 'settings.unsavedChanges' : 'settings.preferencesCurrent') | text }}</p></div>
+    <button type="submit" class="td-button-primary shrink-0" [disabled]="form.invalid || saving()"><svg lucideIcon="save" size="16" aria-hidden="true"></svg>{{ 'action.save' | text }}</button>
+  </footer>
 </form>

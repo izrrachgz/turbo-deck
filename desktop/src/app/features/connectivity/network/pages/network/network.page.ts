@@ -26,6 +26,7 @@ import {
   standalone: true,
   imports: [ConfirmationDialogComponent, FormsModule, LucideDynamicIcon, TextPipe],
   templateUrl: './network.page.html',
+  styleUrl: './network.page.css',
 })
 export class NetworkPage implements OnInit {
   private readonly api = inject(BackendApiService);
@@ -130,10 +131,21 @@ export class NetworkPage implements OnInit {
       const payload = JSON.stringify({ version: 1, baseUrl: url, apiKey: access.apiKey });
       const qr = await QRCode.toDataURL(payload, { errorCorrectionLevel: 'M', margin: 2, width: 320 });
       this.lanAccess.set({ qr, payload, url });
-      this.lanDialogOpen.set(false);
     } catch (error) {
       this.error.set(this.errorText(error));
     }
+  }
+
+  confirmLanPairingDialog(): void {
+    if (this.lanAccess()) {
+      this.lanDialogOpen.set(false);
+      return;
+    }
+    void this.createLanPairing();
+  }
+
+  prepareNewLanPairing(): void {
+    this.lanAccess.set(null);
   }
 
   confirmFirewall(action: 'add' | 'remove'): void {

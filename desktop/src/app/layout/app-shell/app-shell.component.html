@@ -16,13 +16,14 @@
   }
 
   <aside
-    class="fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white shadow-xl transition-[width,transform] lg:z-20 lg:translate-x-0 lg:shadow-none"
+    class="fixed inset-y-0 left-0 z-50 flex flex-col overflow-x-hidden border-r border-slate-200 bg-white shadow-xl transition-transform lg:z-20 lg:translate-x-0 lg:shadow-none"
+    [class.td-drawer-collapsed]="drawerCollapsed"
     [class.w-72]="!drawerCollapsed"
     [class.w-20]="drawerCollapsed"
     [class.-translate-x-full]="!mobileNavigationOpen"
     [class.translate-x-0]="mobileNavigationOpen"
   >
-    <div class="flex h-20 items-center gap-3 border-b border-slate-200 px-4">
+    <div class="td-sidebar-header flex h-20 items-center gap-3 border-b border-slate-200 px-4">
       <div class="td-brand-mark">TD</div>
       @if (!drawerCollapsed) {
         <div class="min-w-0 flex-1"><strong class="block truncate">{{ 'app.name' | text }}</strong><p class="truncate text-xs text-slate-500">{{ 'app.subtitle' | text }}</p></div>
@@ -34,7 +35,7 @@
       }
     </div>
 
-    <nav class="flex-1 overflow-y-auto p-3" aria-label="Primary navigation">
+    <nav class="flex-1 overflow-x-hidden overflow-y-auto p-3" aria-label="Primary navigation">
       @for (group of navigation; track group.labelKey) {
         <section class="mb-5">
           @if (!drawerCollapsed) {
@@ -78,7 +79,7 @@
     </button>
   </aside>
 
-  <main id="main-content" class="min-h-dvh p-4 transition-[margin] sm:p-6 lg:p-8" [ngClass]="drawerCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
+  <main id="main-content" class="min-h-dvh p-4 sm:p-6 lg:p-8" [ngClass]="drawerCollapsed ? 'lg:ml-20' : 'lg:ml-72'">
     <div class="mx-auto max-w-[1600px]" animate.enter="td-page-enter"><router-outlet /></div>
   </main>
 </div>
