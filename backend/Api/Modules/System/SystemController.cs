@@ -83,11 +83,9 @@ public sealed class SystemController(
             return addressError;
         if (request.Mode == NetworkMode.Lan && request.Addresses.Length == 0)
             return "At least one LAN address is required.";
-        if (request.CorsAllowedOrigins.Any(origin => !Uri.TryCreate(origin, UriKind.Absolute, out Uri? uri) ||
-            uri.Scheme is not ("http" or "https")))
-        {
-            return "Every CORS origin must be an absolute HTTP or HTTPS origin.";
-        }
+        string? originError = ValidateBrowserOrigins(request.CorsAllowedOrigins);
+        if (originError is not null)
+            return originError;
         if (request.Mode == NetworkMode.Lan && request.Https.Enabled && string.IsNullOrWhiteSpace(request.Https.CertificatePath))
             return "A certificate path is required when LAN HTTPS is enabled.";
         if (request.Mode == NetworkMode.Lan && !request.Https.Enabled && !request.AllowInsecureHttp)
@@ -112,6 +110,22 @@ public sealed class SystemController(
 
         if (parsedAddresses.Count > 1 && parsedAddresses.Any(NetworkAddressCatalog.IsWildcard))
             return "A wildcard listener cannot be combined with another listener address.";
+        return null;
+    }
+
+    private static string? ValidateBrowserOrigins(string[] origins)
+    {
+        if (origins.Length > 64)
+            return "No more than 64 browser origins can be configured.";
+
+        var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string origin in origins)
+        {
+            if (!BrowserOriginCatalog.TryNormalize(origin, out string value))
+                return "Every browser origin must be HTTP or HTTPS and cannot contain a path, query, fragment, or credentials.";
+            if (!normalized.Add(value))
+                return "Browser origins must be unique.";
+        }
         return null;
     }
 }

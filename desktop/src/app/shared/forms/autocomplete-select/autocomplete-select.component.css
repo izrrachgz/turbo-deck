@@ -9,6 +9,8 @@
   box-shadow: 0 0 0 3px var(--td-focus-soft);
 }
 
+.td-autocomplete-field :focus-visible { outline: none; }
+
 .td-autocomplete-icon-button {
   display: inline-flex;
   width: 2rem;
@@ -23,6 +25,7 @@
 }
 
 .td-autocomplete-icon-button:hover:not(:disabled) { background: var(--td-surface-hover); }
+.td-autocomplete-icon-button:focus-visible { background: var(--td-surface-hover); color: var(--td-text); }
 .td-autocomplete-icon-button:disabled { cursor: not-allowed; opacity: .6; }
 
 .td-autocomplete-panel {

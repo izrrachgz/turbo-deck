@@ -3,6 +3,7 @@ import { PitchShift, Player, gainToDb, start as startAudio } from 'tone';
 
 import { MediaAssetModel } from '../../../../../core/backend-api.service';
 import { TextPipe } from '../../../../../core/i18n/text.pipe';
+import { AudioPlaybackProgressView, createAudioPlaybackProgress } from '../../../../../shared/media/audio-playback-progress';
 
 export type CellDisplaySize = 'small' | 'medium' | 'large' | 'fullscreen';
 export type CellAnimationType = 'none' | 'fade' | 'slide' | 'zoom';
@@ -31,6 +32,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
   private mediaElement?: HTMLElement;
   private player?: Player;
   private pitchShift?: PitchShift;
+  private audioProgress?: AudioPlaybackProgressView;
   private completionTimer?: ReturnType<typeof setTimeout>;
 
   readonly playing = signal(false);
@@ -113,6 +115,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
     this.mediaElement = card;
     this.stage.nativeElement.append(card);
     player.start();
+    this.audioProgress?.start(this.playbackRate);
     this.completionTimer = setTimeout(() => this.stopPlayback(), Math.max(250, sourceDuration / this.playbackRate) + 100);
   }
 
@@ -138,20 +141,15 @@ export class CellMediaPreviewComponent implements OnDestroy {
       heading.append(speed);
     }
 
-    const waveform = document.createElement('div');
-    waveform.className = 'td-cell-preview-waveform';
-    waveform.setAttribute('aria-hidden', 'true');
-    for (const peak of this.waveformPeaks(this.media?.waveformData, player, 40)) {
-      const bar = document.createElement('span');
-      bar.style.height = `${Math.max(12, Math.round(peak * 100))}%`;
-      waveform.append(bar);
-    }
-
-    const duration = document.createElement('time');
-    duration.className = 'td-cell-preview-audio-duration';
-    duration.textContent = this.formatDuration(sourceDurationMilliseconds);
-    content.append(heading, waveform);
-    card.append(icon, content, duration);
+    const progress = createAudioPlaybackProgress(
+      document,
+      this.waveformPeaks(this.media?.waveformData, player, 40),
+      sourceDurationMilliseconds,
+    );
+    progress.time.className = 'td-cell-preview-audio-duration';
+    this.audioProgress = progress;
+    content.append(heading, progress.waveform);
+    card.append(icon, content, progress.time);
     return card;
   }
 
@@ -214,11 +212,6 @@ export class CellMediaPreviewComponent implements OnDestroy {
     });
   }
 
-  private formatDuration(milliseconds: number): string {
-    const seconds = Math.max(0, Math.round(milliseconds / 1000));
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  }
-
   private formatRate(rate: number): string {
     return Number(rate.toFixed(2)).toString();
   }
@@ -266,6 +259,8 @@ export class CellMediaPreviewComponent implements OnDestroy {
   private stopPlayback(): void {
     if (this.completionTimer) clearTimeout(this.completionTimer);
     this.completionTimer = undefined;
+    this.audioProgress?.stop();
+    this.audioProgress = undefined;
     if (this.mediaElement instanceof HTMLMediaElement) {
       this.mediaElement.pause();
       this.mediaElement.removeAttribute('src');

@@ -1,21 +1,21 @@
 .td-cell-preview-panel {
   border: 1px solid var(--td-border);
-  border-radius: .5rem;
+  border-radius: .75rem;
   background: var(--td-surface-muted);
-  padding: 1rem;
+  padding: 1.25rem;
   color: var(--td-text);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--td-text) 5%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--td-text) 6%, transparent), 0 8px 22px color-mix(in srgb, var(--td-shadow) 55%, transparent);
 }
 
 .td-cell-preview-stage {
   position: relative;
   display: grid;
-  min-height: 16rem;
-  margin-top: .75rem;
+  min-height: 18rem;
+  margin-top: 1rem;
   place-items: center;
   overflow: hidden;
   border: 1px dashed color-mix(in srgb, var(--td-text-muted) 70%, var(--td-border));
-  border-radius: .5rem;
+  border-radius: .7rem;
   background: color-mix(in srgb, #080b0d 94%, var(--td-canvas));
 }
 
@@ -37,6 +37,7 @@
 :host ::ng-deep .td-cell-preview-size-fullscreen { width: 100%; height: 100%; }
 
 :host ::ng-deep .td-cell-preview-audio {
+  --td-audio-waveform-color: var(--td-text);
   display: flex;
   width: min(90%, 22rem);
   min-height: 5.75rem;
@@ -56,6 +57,4 @@
 :host ::ng-deep .td-cell-preview-audio-heading { display: flex; min-width: 0; align-items: center; gap: .45rem; font-size: .8rem; }
 :host ::ng-deep .td-cell-preview-audio-heading strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 :host ::ng-deep .td-cell-preview-audio-speed { flex: 0 0 auto; border-radius: 999px; background: var(--td-accent-soft); padding: .1rem .35rem; color: var(--td-accent-text); font-size: .62rem; font-weight: 700; }
-:host ::ng-deep .td-cell-preview-waveform { display: flex; height: 1.8rem; align-items: center; gap: 2px; overflow: hidden; }
-:host ::ng-deep .td-cell-preview-waveform span { width: 2px; min-height: 3px; flex: 1 1 2px; border-radius: 999px; background: var(--td-text); opacity: .88; }
-:host ::ng-deep .td-cell-preview-audio-duration { flex: 0 0 auto; color: var(--td-text-secondary); font: 600 .7rem/1 Roboto Mono, Consolas, monospace; }
+:host ::ng-deep .td-cell-preview-audio-duration { min-width: 5.7rem; flex: 0 0 auto; color: var(--td-text-secondary); font: 600 .7rem/1 Roboto Mono, Consolas, monospace; text-align: right; }

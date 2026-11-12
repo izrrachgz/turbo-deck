@@ -195,6 +195,11 @@ export class TwitchPage implements OnInit, OnDestroy {
     return this.pages().find((page) => page.id === this.selectedPageId());
   }
 
+  selectedDialogReward(): TwitchRewardModel | undefined {
+    const rewardId = this.dialogRewardId();
+    return rewardId ? this.rewards().find((reward) => reward.id === rewardId) : undefined;
+  }
+
   thumbnailBackground(cell: CellConfigModel | undefined): SafeStyle | null {
     const thumbnailId = cell?.thumbnailMediaAssetId;
     if (!thumbnailId || !Number.isSafeInteger(thumbnailId) || thumbnailId < 1) return null;

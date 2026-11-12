@@ -28,6 +28,14 @@ export const APP_ROUTES: Routes = [
         data: { titleKey: AppRouteTitleKeys.twitch },
       },
       {
+        path: AppRouteSegments.twitchSetup,
+        loadComponent: () =>
+          import('./features/connectivity/twitch-setup/pages/twitch-setup/twitch-setup.page').then(
+            (component) => component.TwitchSetupPage,
+          ),
+        data: { titleKey: AppRouteTitleKeys.twitchSetup },
+      },
+      {
         path: AppRouteSegments.network,
         loadComponent: () =>
           import('./features/connectivity/network/pages/network/network.page').then((component) => component.NetworkPage),

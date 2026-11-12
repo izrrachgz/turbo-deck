@@ -146,10 +146,11 @@ internal static class ProgramExtensions
     private static void ConfigureCors(CorsPolicyBuilder policy, IConfiguration api)
     {
         NetworkOptions network = api.GetSection("Network").Get<NetworkOptions>() ?? new NetworkOptions();
-        if (network.CorsAllowedOrigins.Length == 0)
+        string[] allowedOrigins = BrowserOriginCatalog.NormalizeDistinct(network.CorsAllowedOrigins);
+        if (allowedOrigins.Length == 0)
             return;
 
-        policy.WithOrigins(network.CorsAllowedOrigins.Select(origin => origin.TrimEnd('/')).ToArray())
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

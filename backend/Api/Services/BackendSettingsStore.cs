@@ -67,7 +67,7 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
         _network.DiscoveryEnabled,
         _network.InstanceName,
         _network.InstanceId,
-        _network.CorsAllowedOrigins,
+        BrowserOriginCatalog.NormalizeDistinct(_network.CorsAllowedOrigins),
         _network.AllowInsecureHttp,
         _network.Https.Enabled,
         _network.Https.CertificatePath,
@@ -91,7 +91,7 @@ internal sealed class BackendSettingsStore : IBackendSettingsStore
                 DiscoveryEnabled = request.DiscoveryEnabled,
                 InstanceName = request.InstanceName.Trim(),
                 InstanceId = instanceId,
-                CorsAllowedOrigins = request.CorsAllowedOrigins,
+                CorsAllowedOrigins = BrowserOriginCatalog.NormalizeDistinct(request.CorsAllowedOrigins),
                 AllowInsecureHttp = request.AllowInsecureHttp,
                 Https = new HttpsOptions
                 {

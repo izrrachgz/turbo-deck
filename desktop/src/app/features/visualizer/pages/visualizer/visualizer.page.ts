@@ -5,6 +5,7 @@ import { PitchShift, Player, gainToDb, getContext, start as startAudio } from 't
 
 import { PlaybackQueueItemModel, PlaybackQueueSnapshotModel } from '../../../../core/backend-api.service';
 import { TextPipe } from '../../../../core/i18n/text.pipe';
+import { AudioPlaybackProgressView, createAudioPlaybackProgress } from '../../../../shared/media/audio-playback-progress';
 import { VisualizerPlacementService } from '../../services/visualizer-placement.service';
 
 interface RealtimeMessage {
@@ -38,6 +39,7 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
   private mediaElement?: HTMLElement;
   private player?: Player;
   private pitchShift?: PitchShift;
+  private audioProgress?: AudioPlaybackProgressView;
   private completionTimer?: ReturnType<typeof setTimeout>;
   private statePollingTimer?: ReturnType<typeof setInterval>;
   private safeMargin = 24;
@@ -272,6 +274,7 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
     this.pitchShift = pitchShift;
     this.stage.nativeElement.append(badge);
     player.start();
+    this.audioProgress?.start(item.playbackRate);
     this.completionTimer = setTimeout(() => void this.complete(item.id), playbackDuration + 100);
   }
 
@@ -297,20 +300,15 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
       heading.append(speed);
     }
 
-    const waveform = this.document.createElement('div');
-    waveform.className = 'td-visualizer-waveform';
-    waveform.setAttribute('aria-hidden', 'true');
-    for (const peak of this.waveformPeaks(item.waveformData, player, 48)) {
-      const bar = this.document.createElement('span');
-      bar.style.height = `${Math.max(12, Math.round(peak * 100))}%`;
-      waveform.append(bar);
-    }
-
-    const duration = this.document.createElement('time');
-    duration.className = 'td-visualizer-audio-duration';
-    duration.textContent = this.formatDuration(sourceDurationMilliseconds);
-    content.append(heading, waveform);
-    card.append(icon, content, duration);
+    const progress = createAudioPlaybackProgress(
+      this.document,
+      this.waveformPeaks(item.waveformData, player, 48),
+      sourceDurationMilliseconds,
+    );
+    progress.time.className = 'td-visualizer-audio-duration';
+    this.audioProgress = progress;
+    content.append(heading, progress.waveform);
+    card.append(icon, content, progress.time);
     return card;
   }
 
@@ -383,11 +381,6 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
       width: `${rectangle.width}px`,
       height: `${rectangle.height}px`,
     });
-  }
-
-  private formatDuration(milliseconds: number): string {
-    const seconds = Math.max(0, Math.round(milliseconds / 1000));
-    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   }
 
   private formatRate(rate: number): string {
@@ -547,6 +540,8 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
   private cleanupPlayback(): void {
     if (this.completionTimer) clearTimeout(this.completionTimer);
     this.completionTimer = undefined;
+    this.audioProgress?.stop();
+    this.audioProgress = undefined;
     if (this.mediaElement instanceof HTMLMediaElement) {
       this.mediaElement.pause();
       this.mediaElement.removeAttribute('src');

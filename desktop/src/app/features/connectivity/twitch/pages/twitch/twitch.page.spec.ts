@@ -67,6 +67,17 @@ describe('TwitchPage', () => {
     expect(page.dialogRewardId()).toBe('reward-1');
   });
 
+  it('exposes the selected reward details for the binding dialog', () => {
+    const selected = { ...reward('reward-1', 'Hydrate'), cost: 250, prompt: 'Choose a drink' };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: {} }] });
+    const page = TestBed.runInInjectionContext(() => new TwitchPage());
+    page.rewards.set([selected, reward('reward-2', 'Stretch')]);
+
+    page.setDialogReward(selected.id);
+
+    expect(page.selectedDialogReward()).toEqual(selected);
+  });
+
   it('does not restore a stale refresh error after disconnect succeeds', async () => {
     let rejectRewards: ((error: Error) => void) | undefined;
     const rewards = new Promise<never>((_, reject) => { rejectRewards = reject; });

@@ -40,6 +40,7 @@ export class AppShellComponent {
     {
       labelKey: 'nav.connectivity',
       items: [
+        { labelKey: 'nav.twitchSetup', icon: 'book-open', route: AppRoutePaths.twitchSetup },
         { labelKey: 'nav.twitch', icon: 'radio', route: AppRoutePaths.twitch },
         { labelKey: 'nav.network', icon: 'monitor-smartphone', route: AppRoutePaths.network },
       ],

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isWildcardListenerAddress,
   listenerAddressErrors,
   listenerAddressKey,
   normalizeListenerAddresses,
@@ -31,5 +32,11 @@ describe('listener addresses', () => {
 
   it('repairs repeated legacy listener aliases on load', () => {
     expect(uniqueListenerAddresses(['127.0.0.1', ' localhost ', '127.0.0.1'])).toEqual(['127.0.0.1']);
+  });
+
+  it('collapses a legacy wildcard and loopback combination to the wildcard', () => {
+    expect(uniqueListenerAddresses(['127.0.0.1', '0.0.0.0'])).toEqual(['0.0.0.0']);
+    expect(isWildcardListenerAddress('0.0.0.0')).toBe(true);
+    expect(isWildcardListenerAddress('127.0.0.1')).toBe(false);
   });
 });

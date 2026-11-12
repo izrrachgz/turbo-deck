@@ -60,14 +60,38 @@ public sealed class SystemNetworkEndpointTest
         }
     }
 
-    private static object CreateRequest(string[] addresses) => new
+    [Fact]
+    public async Task Network_settings_reject_invalid_and_duplicate_browser_origins()
+    {
+        await using var factory = new ApiFactory();
+        using HttpClient client = factory.CreateAuthenticatedClient();
+        string[][] invalidOrigins =
+        [
+            ["https://example.com/application"],
+            ["ftp://example.com"],
+            ["https://user:password@example.com"],
+            ["https://example.com", "https://EXAMPLE.com:443/"]
+        ];
+
+        foreach (string[] origins in invalidOrigins)
+        {
+            HttpResponseMessage response = await client.PutAsJsonAsync(
+                "/system/network",
+                CreateRequest(["127.0.0.1"], origins),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+    }
+
+    private static object CreateRequest(string[] addresses, string[]? corsAllowedOrigins = null) => new
     {
         mode = 0,
         addresses,
         port = 52024,
         discoveryEnabled = false,
         instanceName = "Turbo Deck Backend",
-        corsAllowedOrigins = Array.Empty<string>(),
+        corsAllowedOrigins = corsAllowedOrigins ?? [],
         allowInsecureHttp = false,
         https = new { enabled = false, certificatePath = string.Empty, certificatePassword = string.Empty }
     };

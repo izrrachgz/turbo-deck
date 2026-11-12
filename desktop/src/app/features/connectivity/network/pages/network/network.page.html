@@ -15,7 +15,14 @@
     </div>
     <label class="text-sm font-medium text-slate-700">{{ 'network.instanceName' | text }}<input class="td-field mt-1.5" maxlength="100" [ngModel]="instanceName()" (ngModelChange)="instanceName.set($event)" /><span class="mt-1.5 block text-xs font-normal text-slate-500">{{ 'network.instanceNameHelp' | text }}</span></label>
     <label class="flex items-center gap-2 self-end pb-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="discoveryEnabled" /> {{ 'network.discovery' | text }}</label>
-    <label class="text-sm font-medium text-slate-700 md:col-span-2">{{ 'network.corsOrigins' | text }}<textarea class="td-field mt-1.5 min-h-20 font-mono text-xs" [(ngModel)]="corsAllowedOrigins"></textarea></label>
+    <div class="md:col-span-2">
+      <div class="flex items-center justify-between gap-3"><span class="text-sm font-medium text-slate-700">{{ 'network.corsOrigins' | text }}</span><button type="button" class="td-button-secondary" (click)="openCorsOriginDialog()"><svg lucideIcon="pencil" size="16" aria-hidden="true"></svg>{{ 'network.manageCorsOrigins' | text }}</button></div>
+      <div class="mt-1.5 flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-slate-300 bg-slate-50 px-3 py-2">
+        @for (origin of corsAllowedOrigins; track origin) { <span class="rounded bg-slate-200 px-2 py-1 font-mono text-xs text-slate-800">{{ origin }}</span> }
+        @if (!corsAllowedOrigins.length) { <span class="text-sm text-slate-500">{{ 'network.noCorsOrigins' | text }}</span> }
+      </div>
+      <p class="mt-1.5 text-xs text-slate-500">{{ 'network.corsOriginsHelp' | text }}</p>
+    </div>
     <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="httpsEnabled" /> {{ 'network.https' | text }}</label>
     <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" [(ngModel)]="allowInsecureHttp" /> {{ 'network.insecureHttp' | text }}</label>
     @if (httpsEnabled) { <label class="text-sm font-medium text-slate-700">{{ 'network.certificatePath' | text }}<input class="td-field mt-1.5" [(ngModel)]="certificatePath" /></label><label class="text-sm font-medium text-slate-700">{{ 'network.certificatePassword' | text }}<input class="td-field mt-1.5" type="password" [(ngModel)]="certificatePassword" placeholder="Leave blank to keep current" /></label> }
@@ -50,6 +57,24 @@
     <p>{{ 'network.restartMessage' | text }}</p>
   }
 </td-confirmation-dialog>
+<td-confirmation-dialog [open]="corsOriginDialogOpen()" (openChange)="corsOriginDialogOpen.set($event)" title="network.corsOriginDialogTitle" confirmLabel="action.save" icon="monitor-smartphone" [confirmDisabled]="corsOriginEditorInvalid()" (confirmed)="saveCorsOrigins()">
+  <p class="mb-4 text-sm text-slate-600">{{ 'network.corsOriginDialogDescription' | text }}</p>
+  @if (!corsOriginDraft.length) { <p class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">{{ 'network.noCorsOrigins' | text }}</p> }
+  <div class="grid gap-3">
+    @for (origin of corsOriginDraft; track $index; let index = $index) {
+      <div>
+        <label [for]="'browser-origin-' + index" class="text-xs font-medium text-slate-600">{{ 'network.corsOrigin' | text }} {{ index + 1 }}</label>
+        <div class="td-field-group mt-1" [class.td-field-group-invalid]="corsOriginError(index)">
+          <input [id]="'browser-origin-' + index" class="td-field font-mono text-sm" [(ngModel)]="corsOriginDraft[index]" placeholder="http://192.168.1.20:4200" />
+          <button type="button" class="td-button-secondary px-3" [attr.aria-label]="'network.removeCorsOrigin' | text" (click)="removeCorsOrigin(index)"><svg lucideIcon="trash-2" size="16" aria-hidden="true"></svg></button>
+        </div>
+        @if (corsOriginErrorKey(index); as errorKey) { <p class="mt-1 text-xs text-red-700">{{ errorKey | text }}</p> }
+      </div>
+    }
+  </div>
+  <button type="button" class="td-button-secondary mt-3" (click)="addCorsOrigin()"><svg lucideIcon="plus" size="16" aria-hidden="true"></svg>{{ 'network.addCorsOrigin' | text }}</button>
+  <p class="mt-3 text-xs text-slate-500">{{ 'network.corsOriginExample' | text }}</p>
+</td-confirmation-dialog>
 <td-confirmation-dialog [open]="lanDialogOpen()" (openChange)="lanDialogOpen.set($event)" title="network.pairingTitle" confirmLabel="network.generatePairing" icon="qr-code" [destructive]="true" (confirmed)="createLanPairing()"><p>{{ 'network.pairingMessage' | text }}</p></td-confirmation-dialog>
 <td-confirmation-dialog [open]="firewallDialogOpen()" (openChange)="firewallDialogOpen.set($event)" title="network.firewallConfirmTitle" confirmLabel="action.confirm" icon="shield" [processing]="applyingFirewall()" (confirmed)="applyFirewall()"><p>{{ 'network.firewallConfirmMessage' | text }}</p></td-confirmation-dialog>
 <td-confirmation-dialog [open]="addressDialogOpen()" (openChange)="addressDialogOpen.set($event)" title="network.addressDialogTitle" confirmLabel="action.save" icon="radio" [confirmDisabled]="addressEditorInvalid()" (confirmed)="saveAddresses()">
@@ -58,9 +83,9 @@
     @for (address of addressDraft; track $index; let index = $index) {
       <div>
         <label [for]="'listener-address-' + index" class="text-xs font-medium text-slate-600">{{ 'network.address' | text }} {{ index + 1 }}</label>
-        <div class="mt-1 flex">
-          <input [id]="'listener-address-' + index" class="td-field min-w-0 rounded-r-none font-mono text-sm" [class.border-red-500]="addressError(index)" [(ngModel)]="addressDraft[index]" placeholder="192.168.1.20" />
-          <button type="button" class="td-button-secondary -ml-px shrink-0 rounded-l-none px-3" [attr.aria-label]="'network.removeAddress' | text" (click)="removeAddress(index)"><svg lucideIcon="trash-2" size="16" aria-hidden="true"></svg></button>
+        <div class="td-field-group mt-1" [class.td-field-group-invalid]="addressError(index)">
+          <input [id]="'listener-address-' + index" class="td-field font-mono text-sm" [(ngModel)]="addressDraft[index]" placeholder="192.168.1.20" />
+          <button type="button" class="td-button-secondary px-3" [attr.aria-label]="'network.removeAddress' | text" (click)="removeAddress(index)"><svg lucideIcon="trash-2" size="16" aria-hidden="true"></svg></button>
         </div>
         @if (addressErrorKey(index); as errorKey) { <p class="mt-1 text-xs text-red-700">{{ errorKey | text }}</p> }
       </div>

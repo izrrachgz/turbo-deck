@@ -36,16 +36,22 @@ export function normalizeListenerAddresses(addresses: readonly string[]): string
 
 export function uniqueListenerAddresses(addresses: readonly string[]): string[] {
   const keys = new Set<string>();
-  return normalizeListenerAddresses(addresses).filter(address => {
+  const unique = normalizeListenerAddresses(addresses).filter(address => {
     const key = listenerAddressKey(address) ?? `invalid:${address.toLowerCase()}`;
     if (keys.has(key)) return false;
     keys.add(key);
     return true;
   });
+  const wildcard = unique.find(isWildcardListenerAddress);
+  return wildcard ? [wildcard] : unique;
 }
 
 export function listenerAddressKey(address: string): string | null {
   return parseListenerAddress(address)?.key ?? null;
+}
+
+export function isWildcardListenerAddress(address: string): boolean {
+  return parseListenerAddress(address)?.wildcard ?? false;
 }
 
 function parseListenerAddress(value: string): ParsedListenerAddress | null {

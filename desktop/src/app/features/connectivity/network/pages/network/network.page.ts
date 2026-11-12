@@ -7,6 +7,13 @@ import { BackendApiService, NetworkSettings, UpdateNetworkRequest } from '../../
 import { TextPipe } from '../../../../../core/i18n/text.pipe';
 import { ConfirmationDialogComponent } from '../../../../../shared/components/confirmations/confirmation-dialog/confirmation-dialog.component';
 import {
+  BrowserOriginError,
+  browserOriginErrors,
+  normalizeBrowserOrigins,
+  uniqueBrowserOrigins,
+} from '../../browser-origin';
+import {
+  isWildcardListenerAddress,
   ListenerAddressError,
   listenerAddressErrors,
   listenerAddressKey,
@@ -34,6 +41,7 @@ export class NetworkPage implements OnInit {
   readonly firewallAction = signal<'add' | 'remove'>('add');
   readonly applyingFirewall = signal(false);
   readonly addressDialogOpen = signal(false);
+  readonly corsOriginDialogOpen = signal(false);
 
   mode = 0;
   addresses = ['127.0.0.1'];
@@ -42,7 +50,8 @@ export class NetworkPage implements OnInit {
   port = 52024;
   discoveryEnabled = false;
   readonly instanceName = signal('');
-  corsAllowedOrigins = '';
+  corsAllowedOrigins: string[] = [];
+  corsOriginDraft: string[] = [];
   allowInsecureHttp = false;
   httpsEnabled = false;
   certificatePath = '';
@@ -63,7 +72,7 @@ export class NetworkPage implements OnInit {
       this.port = settings.port;
       this.discoveryEnabled = settings.discoveryEnabled;
       this.instanceName.set(settings.instanceName);
-      this.corsAllowedOrigins = settings.corsAllowedOrigins.join('\n');
+      this.corsAllowedOrigins = uniqueBrowserOrigins(settings.corsAllowedOrigins);
       this.allowInsecureHttp = settings.allowInsecureHttp;
       this.httpsEnabled = settings.httpsEnabled;
       this.certificatePath = settings.certificatePath;
@@ -140,6 +149,14 @@ export class NetworkPage implements OnInit {
   addAddress(address = ''): void {
     const key = listenerAddressKey(address);
     if (key && this.addressDraft.some(current => listenerAddressKey(current) === key)) return;
+    if (address && isWildcardListenerAddress(address)) {
+      this.addressDraft = normalizeListenerAddresses([address]);
+      return;
+    }
+    if (address && this.addressDraft.some(isWildcardListenerAddress)) {
+      this.addressDraft = normalizeListenerAddresses([address]);
+      return;
+    }
     if (address && this.addressDraft.length === 1 && !this.addressDraft[0].trim()) {
       this.addressDraft = [address];
       return;
@@ -177,6 +194,39 @@ export class NetworkPage implements OnInit {
     return key !== null && this.addressDraft.some(current => listenerAddressKey(current) === key);
   }
 
+  openCorsOriginDialog(): void {
+    this.corsOriginDraft = [...this.corsAllowedOrigins];
+    this.corsOriginDialogOpen.set(true);
+  }
+
+  addCorsOrigin(): void {
+    if (this.corsOriginDraft.some(origin => !origin.trim())) return;
+    this.corsOriginDraft = [...this.corsOriginDraft, ''];
+  }
+
+  removeCorsOrigin(index: number): void {
+    this.corsOriginDraft = this.corsOriginDraft.filter((_, current) => current !== index);
+  }
+
+  saveCorsOrigins(): void {
+    if (this.corsOriginEditorInvalid()) return;
+    this.corsAllowedOrigins = normalizeBrowserOrigins(this.corsOriginDraft);
+    this.corsOriginDialogOpen.set(false);
+  }
+
+  corsOriginError(index: number): BrowserOriginError {
+    return browserOriginErrors(this.corsOriginDraft)[index] ?? null;
+  }
+
+  corsOriginErrorKey(index: number): string {
+    const error = this.corsOriginError(index);
+    return error ? `network.corsOriginError.${error}` : '';
+  }
+
+  corsOriginEditorInvalid(): boolean {
+    return browserOriginErrors(this.corsOriginDraft).some(Boolean);
+  }
+
   async applyFirewall(): Promise<void> {
     this.applyingFirewall.set(true);
     this.error.set('');
@@ -198,7 +248,7 @@ export class NetworkPage implements OnInit {
       port: Number(this.port),
       discoveryEnabled: this.discoveryEnabled,
       instanceName: this.instanceName().trim(),
-      corsAllowedOrigins: this.lines(this.corsAllowedOrigins),
+      corsAllowedOrigins: this.corsAllowedOrigins,
       allowInsecureHttp: this.allowInsecureHttp,
       https: {
         enabled: this.httpsEnabled,
@@ -206,10 +256,6 @@ export class NetworkPage implements OnInit {
         certificatePassword: this.certificatePassword,
       },
     };
-  }
-
-  private lines(value: string): string[] {
-    return value.split(/\r?\n|,/).map(item => item.trim()).filter(Boolean);
   }
 
   private errorText(error: unknown): string {

@@ -74,6 +74,7 @@ td-visualizer-page {
 }
 
 .td-visualizer-audio {
+  --td-audio-waveform-color: rgb(255 255 255 / 94%);
   display: flex;
   box-sizing: border-box;
   align-items: center;
@@ -138,27 +139,12 @@ td-visualizer-page {
   font-weight: 700;
 }
 
-.td-visualizer-waveform {
-  display: flex;
-  height: 2rem;
-  align-items: center;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.td-visualizer-waveform span {
-  width: 3px;
-  min-height: 3px;
-  flex: 1 1 3px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 88%);
-  box-shadow: 0 0 3px rgb(255 255 255 / 18%);
-}
-
 .td-visualizer-audio-duration {
+  min-width: 6.2rem;
   flex: 0 0 auto;
   color: rgb(240 253 250 / 90%);
   font: 600 .75rem/1 Roboto Mono, Consolas, monospace;
+  text-align: right;
 }
 
 .td-visualizer-error {

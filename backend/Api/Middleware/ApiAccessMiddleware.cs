@@ -108,10 +108,13 @@ internal sealed class ApiAccessMiddleware(
 
     private bool IsAllowedRealtimeOrigin(HttpContext context, string origin)
     {
-        string normalized = origin.TrimEnd('/');
+        if (!BrowserOriginCatalog.TryNormalize(origin, out string normalized))
+            return false;
+
         string sameOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
         return normalized.Equals(sameOrigin, StringComparison.OrdinalIgnoreCase) ||
-            network.Value.CorsAllowedOrigins.Contains(normalized, StringComparer.OrdinalIgnoreCase);
+            BrowserOriginCatalog.NormalizeDistinct(network.Value.CorsAllowedOrigins)
+                .Contains(normalized, StringComparer.OrdinalIgnoreCase);
     }
 
     private static bool IsTwitchCredentialManagement(HttpRequest request)
