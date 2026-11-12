@@ -27,7 +27,6 @@ const OPEN_EXTERNAL_CHANNEL = 'desktop:open-external';
 const APP_INFO_CHANNEL = 'desktop:app-info';
 const APP_LICENSE_CHANNEL = 'desktop:license';
 const APP_QUIT_CHANNEL = 'desktop:quit';
-const FEEDBACK_CHANNEL = 'support:feedback';
 const UPDATE_STATUS_CHANNEL = 'updates:status';
 const UPDATE_CHECK_CHANNEL = 'updates:check';
 const UPDATE_DOWNLOAD_CHANNEL = 'updates:download';
@@ -557,17 +556,6 @@ function registerIpcHandlers() {
     return text;
   });
 
-  ipcMain.handle(FEEDBACK_CHANNEL, async (event, request) => {
-    assertTrustedSender(event, mainWindow?.webContents);
-    const category = cleanText(request?.category, 40) || 'Feedback';
-    const summary = cleanText(request?.summary, 120);
-    const description = cleanText(request?.description, 1800);
-    if (!summary || !description) throw new Error('A feedback summary and description are required.');
-    const subject = `[Turbo Deck] ${category}: ${summary}`;
-    const body = `${description}\n\nTurbo Deck ${app.getVersion()} · ${process.platform} ${process.arch}`;
-    await shell.openExternal(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-  });
-
   ipcMain.handle(APP_QUIT_CHANNEL, event => {
     assertTrustedSender(event, mainWindow?.webContents);
     quitting = true;
@@ -590,10 +578,6 @@ function registerIpcHandlers() {
     assertTrustedSender(event, mainWindow?.webContents);
     updateService.apply();
   });
-}
-
-function cleanText(value, maximumLength) {
-  return String(value ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, maximumLength);
 }
 
 function backendBaseUrls() {

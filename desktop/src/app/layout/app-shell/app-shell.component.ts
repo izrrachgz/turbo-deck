@@ -11,7 +11,8 @@ import { ConfirmationDialogComponent } from '../../shared/components/confirmatio
 interface NavigationItem {
   readonly labelKey: string;
   readonly icon: string;
-  readonly route: string;
+  readonly route?: string;
+  readonly externalUrl?: string;
 }
 
 interface NavigationGroup {
@@ -27,6 +28,7 @@ interface NavigationGroup {
 })
 export class AppShellComponent {
   private static readonly donationUrl = 'https://www.paypal.com/donate/?hosted_button_id=5M8HPH943MVV4';
+  private static readonly newIssueUrl = 'https://github.com/izrrachgz/turbo-deck/issues/new';
 
   readonly confirmations = inject(ConfirmationService);
   readonly navigation: readonly NavigationGroup[] = [
@@ -52,7 +54,7 @@ export class AppShellComponent {
         { labelKey: 'nav.advancedSettings', icon: 'database-zap', route: AppRoutePaths.advancedSettings },
         { labelKey: 'nav.docs', icon: 'book-open', route: AppRoutePaths.docs },
         { labelKey: 'nav.updates', icon: 'refresh-cw', route: AppRoutePaths.updates },
-        { labelKey: 'nav.feedback', icon: 'life-buoy', route: AppRoutePaths.feedback },
+        { labelKey: 'nav.openGithubIssue', icon: 'life-buoy', externalUrl: AppShellComponent.newIssueUrl },
         { labelKey: 'nav.about', icon: 'info', route: AppRoutePaths.about },
       ],
     },
@@ -73,5 +75,10 @@ export class AppShellComponent {
   openDonation(): void {
     this.mobileNavigationOpen = false;
     void window.turboDeck.openExternal(AppShellComponent.donationUrl);
+  }
+
+  openExternal(url: string): void {
+    this.mobileNavigationOpen = false;
+    void window.turboDeck.openExternal(url);
   }
 }

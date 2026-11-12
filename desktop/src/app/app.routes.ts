@@ -69,12 +69,6 @@ export const APP_ROUTES: Routes = [
         data: { titleKey: AppRouteTitleKeys.updates },
       },
       {
-        path: AppRouteSegments.feedback,
-        loadComponent: () =>
-          import('./features/system/feedback/pages/feedback/feedback.page').then((component) => component.FeedbackPage),
-        data: { titleKey: AppRouteTitleKeys.feedback },
-      },
-      {
         path: AppRouteSegments.about,
         loadComponent: () =>
           import('./features/system/about/pages/about/about.page').then((component) => component.AboutPage),

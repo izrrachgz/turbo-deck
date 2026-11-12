@@ -32,7 +32,6 @@ declare global {
       configureFirewall(port: number, action: 'add' | 'remove'): Promise<{ applied: boolean }>;
       openExternal(url: string): Promise<void>;
       getLicense(): Promise<string>;
-      submitFeedback(feedback: { category: string; summary: string; description: string }): Promise<void>;
       quit(): Promise<void>;
       getUpdateStatus(): Promise<DesktopUpdateStatus>;
       checkForUpdates(): Promise<DesktopUpdateStatus>;

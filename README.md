@@ -27,7 +27,7 @@ and a transparent OBS/browser visualizer with a public receive-only SignalR hub 
 responsive `/deck` client lets phones and tablets select a profile/page and trigger the same backend-owned queue from
 multiple devices. The connectivity slice adds optional Twitch Device Code authorization and EventSub
 reward bindings, editable LAN hosting, offline QR pairing payloads, and an explicitly confirmed Windows Firewall helper.
-The final desktop slice adds system-tray background operation, About/MIT and privacy-conscious feedback surfaces, and a
+The final desktop slice adds system-tray background operation, About/MIT, direct GitHub issue access, and a
 manual Check → Download → Verify → Apply update workflow that is enabled only in signed release builds.
 
 ## Prerequisites

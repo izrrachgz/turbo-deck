@@ -39,9 +39,6 @@ contextBridge.exposeInMainWorld('turboDeck', Object.freeze({
   getLicense() {
     return ipcRenderer.invoke('desktop:license');
   },
-  submitFeedback(feedback) {
-    return ipcRenderer.invoke('support:feedback', feedback);
-  },
   quit() {
     return ipcRenderer.invoke('desktop:quit');
   },

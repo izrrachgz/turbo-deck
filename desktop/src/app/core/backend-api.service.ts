@@ -347,10 +347,6 @@ export class BackendApiService {
     return window.turboDeck.getLicense();
   }
 
-  submitFeedback(category: string, summary: string, description: string): Promise<void> {
-    return window.turboDeck.submitFeedback({ category, summary, description });
-  }
-
   quitApplication(): Promise<void> {
     return window.turboDeck.quit();
   }

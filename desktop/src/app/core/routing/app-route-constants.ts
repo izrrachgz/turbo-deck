@@ -8,7 +8,6 @@ export const AppRouteSegments = {
   advancedSettings: 'advanced-settings',
   docs: 'docs',
   updates: 'updates',
-  feedback: 'feedback',
   about: 'about',
 } as const;
 
@@ -22,6 +21,5 @@ export const AppRouteTitleKeys = {
   advancedSettings: 'nav.advancedSettings',
   docs: 'nav.docs',
   updates: 'nav.updates',
-  feedback: 'nav.feedback',
   about: 'nav.about',
 } as const;

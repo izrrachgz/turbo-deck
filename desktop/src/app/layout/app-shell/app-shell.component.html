@@ -42,18 +42,30 @@
             <h2 class="mb-2 px-3 text-[0.68rem] font-bold uppercase tracking-[0.16em] text-slate-500">{{ group.labelKey | text }}</h2>
           }
           <ul class="space-y-1">
-            @for (item of group.items; track item.route) {
+            @for (item of group.items; track item.labelKey) {
               <li>
-                <a
-                  [routerLink]="item.route"
-                  routerLinkActive="td-nav-active"
-                  class="td-nav-link"
-                  [title]="drawerCollapsed ? (item.labelKey | text) : ''"
-                  (click)="mobileNavigationOpen = false"
-                >
-                  <svg [lucideIcon]="item.icon" size="20" aria-hidden="true"></svg>
-                  @if (!drawerCollapsed) { <span>{{ item.labelKey | text }}</span> }
-                </a>
+                @if (item.route; as route) {
+                  <a
+                    [routerLink]="route"
+                    routerLinkActive="td-nav-active"
+                    class="td-nav-link"
+                    [title]="drawerCollapsed ? (item.labelKey | text) : ''"
+                    (click)="mobileNavigationOpen = false"
+                  >
+                    <svg [lucideIcon]="item.icon" size="20" aria-hidden="true"></svg>
+                    @if (!drawerCollapsed) { <span>{{ item.labelKey | text }}</span> }
+                  </a>
+                } @else if (item.externalUrl; as externalUrl) {
+                  <button
+                    type="button"
+                    class="td-nav-link w-full"
+                    [title]="drawerCollapsed ? (item.labelKey | text) : ''"
+                    (click)="openExternal(externalUrl)"
+                  >
+                    <svg [lucideIcon]="item.icon" size="20" aria-hidden="true"></svg>
+                    @if (!drawerCollapsed) { <span>{{ item.labelKey | text }}</span> }
+                  </button>
+                }
               </li>
             }
           </ul>
