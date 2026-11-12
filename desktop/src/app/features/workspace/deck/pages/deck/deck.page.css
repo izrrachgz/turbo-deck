@@ -147,3 +147,22 @@
   .td-cell-asset-action { grid-column: 1 / -1; justify-content: center; }
   .td-cell-behavior-options { grid-template-columns: 1fr; }
 }
+
+.td-playback-rate-slider-shell {
+  position: relative;
+  display: block;
+  margin-top: .5rem;
+}
+
+.td-playback-rate-blocked {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: .35rem;
+  width: calc(6.25% - .35rem);
+  height: .25rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+  border-radius: 999px 0 0 999px;
+  background: var(--td-danger-text);
+}

@@ -8,6 +8,27 @@ import { PreferencesService } from '../../../../../core/preferences/preferences.
 import { DeckPage } from './deck.page';
 
 describe('DeckPage cell editor', () => {
+  it('accepts audio playback rates through 4x and rejects higher values', () => {
+    const page = createPage({});
+    const playbackRate = page.cellForm.controls.playbackRate;
+
+    playbackRate.setValue(4);
+    expect(playbackRate.valid).toBe(true);
+
+    playbackRate.setValue(4.25);
+    expect(playbackRate.hasError('max')).toBe(true);
+  });
+
+  it('prevents the visual slider from selecting a rate below 0.25x', () => {
+    const page = createPage({});
+    const input = { value: '0' } as HTMLInputElement;
+
+    page.enforceMinimumPlaybackRate({ target: input } as unknown as Event);
+
+    expect(input.value).toBe('0.25');
+    expect(page.cellForm.controls.playbackRate.value).toBe(0.25);
+  });
+
   it('disposes edited values and loads every cell into a pristine form', async () => {
     const page = createPage({});
     page.cells.set([cell(1, 0, 0)]);

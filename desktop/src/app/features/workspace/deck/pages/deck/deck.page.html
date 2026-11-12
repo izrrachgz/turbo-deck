@@ -138,8 +138,18 @@
           <h3 class="font-semibold text-slate-950">{{ 'deck.audioConfiguration' | text }}</h3>
           <div class="mt-4 grid gap-4">
             <label class="text-sm font-medium text-slate-700">{{ 'deck.playbackRate' | text }}: <output>{{ cellForm.controls.playbackRate.value }}x</output>
-              <input class="mt-2 w-full accent-teal-600" type="range" min="0.25" max="2" step="0.25" formControlName="playbackRate" />
-              <span class="mt-1 flex justify-between text-xs text-slate-500"><span>0.25x</span><span>1x</span><span>2x</span></span>
+              <span class="td-playback-rate-slider-shell">
+                <input
+                  class="block w-full accent-teal-600"
+                  type="range"
+                  min="0"
+                  max="4"
+                  step="0.25"
+                  formControlName="playbackRate"
+                  (input)="enforceMinimumPlaybackRate($event)" />
+                <span class="td-playback-rate-blocked" aria-hidden="true"></span>
+              </span>
+              <span class="mt-1 flex justify-between text-xs text-slate-500" aria-hidden="true"><span>0.25x</span><span>2x</span><span>4x</span></span>
             </label>
             <label class="text-sm font-medium text-slate-700">{{ 'deck.pitchShift' | text }}: <output>{{ cellForm.controls.pitchSemitones.value > 0 ? '+' : '' }}{{ cellForm.controls.pitchSemitones.value }}</output>
               <input class="mt-2 w-full accent-teal-600" type="range" min="-24" max="24" step="1" formControlName="pitchSemitones" />

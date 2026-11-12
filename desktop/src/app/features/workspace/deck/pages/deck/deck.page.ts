@@ -96,6 +96,13 @@ export class DeckPage implements OnInit {
     await Promise.all([this.loadProfiles(), this.loadMediaAssets()]);
   }
 
+  enforceMinimumPlaybackRate(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const playbackRate = Math.max(0.25, Number(input.value));
+    input.value = String(playbackRate);
+    this.cellForm.controls.playbackRate.setValue(playbackRate);
+  }
+
   cellAt(position: GridPosition): CellConfigModel | undefined {
     return this.cells().find((cell) => cell.rowIndex === position.rowIndex && cell.columnIndex === position.columnIndex);
   }
