@@ -1,0 +1,19 @@
+.td-animation-playground { border: 1px solid var(--td-border); border-radius: .75rem; background: var(--td-surface-muted); padding: 1rem; color: var(--td-text); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--td-text) 5%, transparent); }
+.td-animation-playground header { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.td-animation-playground h3 { margin: 0; font-size: .85rem; font-weight: 700; }
+.td-animation-playground header p { margin: .2rem 0 0; color: var(--td-text-muted); font-size: .72rem; line-height: 1.4; }
+.td-animation-playground header > span { flex: 0 0 auto; border-radius: 999px; background: var(--td-accent-soft); padding: .22rem .5rem; color: var(--td-accent-text); font-size: .62rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.td-animation-playground-stage { position: relative; display: grid; min-height: 12rem; margin-top: .85rem; place-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--td-border) 75%, var(--td-accent)); border-radius: .65rem; background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--td-accent) 14%, transparent), transparent 55%), color-mix(in srgb, var(--td-canvas) 92%, #000); }
+.td-animation-playground-stage::before { position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, var(--td-border) 36%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--td-border) 36%, transparent) 1px, transparent 1px); background-size: 1.5rem 1.5rem; content: ''; mask-image: radial-gradient(circle, #000 25%, transparent 75%); }
+.td-animation-orbit-guide { position: absolute; width: 9rem; height: 5.5rem; border: 1px dashed color-mix(in srgb, var(--td-accent) 48%, transparent); border-radius: 50%; rotate: -12deg; }
+.td-animation-sample { position: relative; display: grid; width: 4.25rem; height: 4.25rem; place-items: center; overflow: hidden; border: 1px solid color-mix(in srgb, var(--td-accent-text) 74%, white); border-radius: .75rem; background: linear-gradient(145deg, var(--td-accent), color-mix(in srgb, var(--td-accent) 58%, #6d28d9)); box-shadow: 0 14px 28px color-mix(in srgb, var(--td-accent) 30%, transparent), inset 0 1px 0 rgb(255 255 255 / 30%); }
+.td-animation-sample::before { position: absolute; width: 150%; height: 45%; background: rgb(255 255 255 / 14%); content: ''; rotate: -38deg; }
+.td-animation-sample i { position: relative; z-index: 1; display: block; width: 1.5rem; height: .22rem; border-radius: 999px; background: var(--td-on-accent); opacity: .78; }
+.td-animation-sample i:first-child { translate: -.4rem .45rem; rotate: 45deg; }
+.td-animation-sample i:nth-child(2) { width: 2.2rem; }
+.td-animation-sample i:last-child { translate: .4rem -.45rem; rotate: -45deg; }
+.td-animation-playground footer { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+
+@media (max-width: 479px) {
+  .td-animation-playground footer { grid-template-columns: 1fr; }
+}

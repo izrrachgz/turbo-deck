@@ -109,13 +109,13 @@
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="text-sm font-medium text-slate-700">{{ 'deck.animationIn' | text }}
                 <select class="td-field mt-1.5" formControlName="animationInType">
-                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option>
+                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option>
                 </select>
               </label>
               <label class="text-sm font-medium text-slate-700">{{ 'deck.durationSeconds' | text }}<input class="td-field mt-1.5" type="number" min="0" max="10" step="0.1" formControlName="animationInDurationSeconds" /></label>
               <label class="text-sm font-medium text-slate-700">{{ 'deck.animationOut' | text }}
                 <select class="td-field mt-1.5" formControlName="animationOutType">
-                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option>
+                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option>
                 </select>
               </label>
               <label class="text-sm font-medium text-slate-700">{{ 'deck.durationSeconds' | text }}<input class="td-field mt-1.5" type="number" min="0" max="10" step="0.1" formControlName="animationOutDurationSeconds" /></label>
@@ -126,10 +126,9 @@
         <section class="rounded-xl border border-slate-200 bg-white p-5">
           <h3 class="font-semibold text-slate-950">{{ 'deck.audioConfiguration' | text }}</h3>
           <div class="mt-4 grid gap-4">
-            <label class="text-sm font-medium text-slate-700">{{ 'deck.playbackRate' | text }}
-              <select class="td-field mt-1.5" formControlName="playbackRate">
-                <option [value]="0.25">0.25x</option><option [value]="0.5">0.5x</option><option [value]="0.75">0.75x</option><option [value]="1">1x</option><option [value]="1.25">1.25x</option><option [value]="1.5">1.5x</option><option [value]="2">2x</option>
-              </select>
+            <label class="text-sm font-medium text-slate-700">{{ 'deck.playbackRate' | text }}: <output>{{ cellForm.controls.playbackRate.value }}x</output>
+              <input class="mt-2 w-full accent-teal-600" type="range" min="0.25" max="2" step="0.25" formControlName="playbackRate" />
+              <span class="mt-1 flex justify-between text-xs text-slate-500"><span>0.25x</span><span>1x</span><span>2x</span></span>
             </label>
             <label class="text-sm font-medium text-slate-700">{{ 'deck.pitchShift' | text }}: <output>{{ cellForm.controls.pitchSemitones.value > 0 ? '+' : '' }}{{ cellForm.controls.pitchSemitones.value }}</output>
               <input class="mt-2 w-full accent-teal-600" type="range" min="-24" max="24" step="1" formControlName="pitchSemitones" />
@@ -173,7 +172,7 @@
       @if (selectedMedia(); as media) {
         <article class="rounded-xl border border-teal-200 bg-teal-50 p-4">
           <p class="text-xs font-semibold uppercase tracking-wider text-teal-700">{{ 'deck.selectedMedia' | text }}</p>
-          <div class="mt-2 flex flex-wrap items-start justify-between gap-3"><h3 class="min-w-0 break-words font-semibold text-teal-950">{{ media.displayName }}</h3><span class="rounded-full bg-teal-200 px-2.5 py-1 text-xs font-semibold uppercase text-teal-950">{{ media.kind }}</span></div>
+          <div class="mt-2 flex flex-wrap items-start justify-between gap-3"><h3 class="min-w-0 break-words font-semibold text-teal-950">{{ media.displayName }}</h3><span class="td-media-kind-badge">{{ media.kind }}</span></div>
           <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
             @if (media.width && media.height) { <span class="rounded-md border border-teal-200 bg-white px-2 py-1">{{ media.width }} × {{ media.height }}</span> }
             @if (formatMediaDuration(media.durationMilliseconds); as duration) { <span class="rounded-md border border-teal-200 bg-white px-2 py-1">{{ duration }}</span> }
@@ -182,6 +181,14 @@
         </article>
       }
       <button type="button" class="td-button-primary w-full justify-center" [disabled]="!selectedMedia() || cellForm.invalid" (click)="testCell()"><svg lucideIcon="play" size="16" aria-hidden="true"></svg>{{ 'deck.testConfiguration' | text }}</button>
+      @if (selectedMediaKind() === 'image' || selectedMediaKind() === 'video') {
+        <td-animation-playground
+          [animationInType]="cellForm.controls.animationInType.value"
+          [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000"
+          [animationOutType]="cellForm.controls.animationOutType.value"
+          [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000"
+        />
+      }
     </aside>
   </form>
 </td-confirmation-dialog>

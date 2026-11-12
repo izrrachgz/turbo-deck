@@ -35,7 +35,7 @@ public sealed class ApplicationMigrationRunnerTest
             .Select("TimeZone")
             .FirstAsync<string>(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(9, records.Count());
+        Assert.Equal(10, records.Count());
         Assert.Equal(
             ["AppSettings", "CellConfig", "DeckPage", "MediaAsset", "MigrationRecord", "Profile", "StoredFile", "TwitchRewardBinding"],
             tables);
@@ -95,6 +95,88 @@ public sealed class ApplicationMigrationRunnerTest
         Assert.Equal(Enumerable.Range(1, 8), pages.Select(page => page.Position));
     }
 
+    [Fact]
+    public async Task Migration_10_preserves_cells_and_reward_bindings_and_accepts_advanced_animations()
+    {
+        using var repository = new WritableRepository(
+            "Data Source=:memory:;Version=3;New=True;",
+            DatabaseEngine.SqLite,
+            NullLogger<WritableRepository>.Instance);
+        var embeddedSource = new EmbeddedMigrationScriptSource();
+        IReadOnlyList<MigrationScript> scripts = await embeddedSource.GetScriptsAsync(
+            DatabaseEngine.SqLite,
+            TestContext.Current.CancellationToken);
+        var initialRunner = new ApplicationMigrationRunner(
+            repository,
+            new StaticMigrationScriptSource(scripts.Take(9).ToArray()),
+            TimeProvider.System,
+            NullLogger<ApplicationMigrationRunner>.Instance);
+        await initialRunner.RunAsync(TestContext.Current.CancellationToken);
+
+        DateTime now = DateTime.UtcNow;
+        long profileId = await repository.Db.Query("Profile").InsertGetIdAsync<long>(new
+        {
+            Name = "Animation test",
+            SortOrder = 1,
+            SelectedPageNumber = 1,
+            CreatedUtc = now,
+            ModifiedUtc = now,
+            DeletedUtc = (DateTime?)null
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        long pageId = await repository.Db.Query("DeckPage").InsertGetIdAsync<long>(new
+        {
+            ProfileId = profileId,
+            Name = "1",
+            Position = 1,
+            CreatedUtc = now,
+            ModifiedUtc = now,
+            DeletedUtc = (DateTime?)null
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        long cellId = await repository.Db.Query("CellConfig").InsertGetIdAsync<long>(new
+        {
+            PageId = pageId,
+            RowIndex = 0,
+            ColumnIndex = 0,
+            Label = "Advanced animation",
+            CreatedUtc = now,
+            ModifiedUtc = now,
+            DeletedUtc = (DateTime?)null
+        }, cancellationToken: TestContext.Current.CancellationToken);
+        await repository.Db.Query("TwitchRewardBinding").InsertAsync(new
+        {
+            RewardId = "reward-1",
+            RewardTitle = "Animate",
+            CellConfigId = cellId,
+            CreatedUtc = now,
+            ModifiedUtc = now,
+            DeletedUtc = (DateTime?)null
+        }, cancellationToken: TestContext.Current.CancellationToken);
+
+        var finalRunner = new ApplicationMigrationRunner(
+            repository,
+            embeddedSource,
+            TimeProvider.System,
+            NullLogger<ApplicationMigrationRunner>.Instance);
+        await finalRunner.RunAsync(TestContext.Current.CancellationToken);
+        await repository.Db.Query("CellConfig").Where("Id", cellId).UpdateAsync(new
+        {
+            AnimationInType = "orbit",
+            AnimationOutType = "morph"
+        }, cancellationToken: TestContext.Current.CancellationToken);
+
+        long preservedCellId = await repository.Db.Query("TwitchRewardBinding")
+            .Where("RewardId", "reward-1")
+            .Select("CellConfigId")
+            .FirstAsync<long>(cancellationToken: TestContext.Current.CancellationToken);
+        AdvancedAnimationTypes animations = await repository.Db.Query("CellConfig")
+            .Where("Id", cellId)
+            .FirstAsync<AdvancedAnimationTypes>(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(cellId, preservedCellId);
+        Assert.Equal("orbit", animations.AnimationInType);
+        Assert.Equal("morph", animations.AnimationOutType);
+    }
+
     private sealed class StaticMigrationScriptSource : IMigrationScriptSource
     {
         private readonly IReadOnlyList<MigrationScript> _scripts;
@@ -115,5 +197,12 @@ public sealed class ApplicationMigrationRunnerTest
     private sealed class PagePosition
     {
         public int Position { get; init; }
+    }
+
+    private sealed class AdvancedAnimationTypes
+    {
+        public string AnimationInType { get; init; } = string.Empty;
+
+        public string AnimationOutType { get; init; } = string.Empty;
     }
 }

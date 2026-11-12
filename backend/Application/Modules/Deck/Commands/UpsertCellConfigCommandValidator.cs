@@ -80,5 +80,6 @@ internal sealed class UpsertCellConfigCommandValidator : AbstractValidator<Upser
             .WithMessage(messages.Get(nameof(ValidationText.Queue_Priority_Is_Not_Supported)));
     }
 
-    private static bool IsSupportedAnimation(string type) => type is "none" or "fade" or "slide" or "zoom";
+    private static bool IsSupportedAnimation(string type) => type is
+        "none" or "fade" or "slide" or "zoom" or "spin" or "flip" or "bounce" or "morph" or "orbit" or "blur";
 }

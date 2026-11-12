@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { CellMediaPreviewComponent } from './cell-media-preview.component';
 
 describe('CellMediaPreviewComponent', () => {
+  it('formats a string-backed playback rate without failing the audio preview', () => {
+    const component = new CellMediaPreviewComponent();
+    const internal = component as unknown as { formatRate(rate: number | string): string };
+
+    expect(internal.formatRate('1.25')).toBe('1.25');
+  });
+
   it('normalizes decoded audio energy into a visibly varied waveform', () => {
     const component = new CellMediaPreviewComponent();
     const samples = new Float32Array(800);

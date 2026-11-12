@@ -16,6 +16,7 @@ import { PreferencesService } from '../../../../../core/preferences/preferences.
 import { ConfirmationDialogComponent } from '../../../../../shared/components/confirmations/confirmation-dialog/confirmation-dialog.component';
 import { MediaCellComponent } from '../../../../../shared/components/media-cell/media-cell.component';
 import { TextInputComponent } from '../../../../../shared/forms/text-input/text-input.component';
+import { AnimationPlaygroundComponent } from '../../components/animation-playground/animation-playground.component';
 import { CellMediaPreviewComponent } from '../../components/cell-media-preview/cell-media-preview.component';
 
 interface GridPosition {
@@ -27,6 +28,7 @@ interface GridPosition {
   selector: 'td-deck-page',
   standalone: true,
   imports: [
+    AnimationPlaygroundComponent,
     ConfirmationDialogComponent,
     CellMediaPreviewComponent,
     LucideDynamicIcon,
@@ -195,7 +197,7 @@ export class DeckPage implements OnInit {
         mediaAssetId: value.mediaAssetId ? Number(value.mediaAssetId) : null,
         thumbnailMediaAssetId: value.thumbnailMediaAssetId ? Number(value.thumbnailMediaAssetId) : null,
         volume: 1,
-        playbackRate: mediaKind === 'audio' ? value.playbackRate : 1,
+        playbackRate: mediaKind === 'audio' ? Number(value.playbackRate) : 1,
         pitchSemitones: mediaKind === 'audio' ? value.pitchSemitones : 0,
         displayDurationMilliseconds: mediaKind === 'image' && value.imageDuration !== 'permanent'
           ? Number(value.imageDuration)

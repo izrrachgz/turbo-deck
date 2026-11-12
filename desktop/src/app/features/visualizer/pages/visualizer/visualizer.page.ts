@@ -6,6 +6,7 @@ import { PitchShift, Player, gainToDb, getContext, start as startAudio } from 't
 import { PlaybackQueueItemModel, PlaybackQueueSnapshotModel } from '../../../../core/backend-api.service';
 import { TextPipe } from '../../../../core/i18n/text.pipe';
 import { AudioPlaybackProgressView, createAudioPlaybackProgress } from '../../../../shared/media/audio-playback-progress';
+import { animateMediaElement } from '../../../../shared/media/media-animation';
 import { VisualizerPlacementService } from '../../services/visualizer-placement.service';
 
 interface RealtimeMessage {
@@ -212,7 +213,7 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
     image.onload = () => {
       this.position(image, item, image.naturalWidth, image.naturalHeight);
       image.classList.add('td-visualizer-media-visible');
-      void this.animateMedia(image, item.animationInType, item.animationInDurationMilliseconds, true);
+      void animateMediaElement(image, item.animationInType, item.animationInDurationMilliseconds, true);
       if (!item.displayPermanently) {
         this.completionTimer = setTimeout(() => void this.finishVisual(item, image), item.displayDurationMilliseconds);
       }
@@ -235,7 +236,7 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
     video.onloadedmetadata = () => {
       this.position(video, item, video.videoWidth, video.videoHeight);
       video.classList.add('td-visualizer-media-visible');
-      void this.animateMedia(video, item.animationInType, item.animationInDurationMilliseconds, true);
+      void animateMediaElement(video, item.animationInType, item.animationInDurationMilliseconds, true);
       void video.play().catch(error => {
         if (error instanceof DOMException && error.name === 'NotAllowedError') {
           this.deferForPlaybackActivation(item);
@@ -493,32 +494,8 @@ export class VisualizerPage implements AfterViewInit, OnDestroy {
 
   private async finishVisual(item: PlaybackQueueItemModel, element: HTMLElement): Promise<void> {
     if (this.current?.id !== item.id || this.mediaElement !== element) return;
-    await this.animateMedia(element, item.animationOutType, item.animationOutDurationMilliseconds, false);
+    await animateMediaElement(element, item.animationOutType, item.animationOutDurationMilliseconds, false);
     await this.complete(item.id);
-  }
-
-  private async animateMedia(
-    element: HTMLElement,
-    type: PlaybackQueueItemModel['animationInType'],
-    durationMilliseconds: number,
-    entering: boolean,
-  ): Promise<void> {
-    if (type === 'none' || durationMilliseconds <= 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const visible = { opacity: 1, transform: 'translate(0) scale(1)' };
-    const hidden = type === 'slide'
-      ? { opacity: 0, transform: entering ? 'translateY(18%) scale(1)' : 'translateY(-18%) scale(1)' }
-      : type === 'zoom'
-        ? { opacity: 0, transform: entering ? 'translate(0) scale(.72)' : 'translate(0) scale(1.18)' }
-        : { opacity: 0, transform: 'translate(0) scale(1)' };
-    try {
-      await element.animate(entering ? [hidden, visible] : [visible, hidden], {
-        duration: durationMilliseconds,
-        easing: 'ease-in-out',
-        fill: 'forwards',
-      }).finished;
-    } catch {
-      // A queue override or clear can remove media while its transition is active.
-    }
   }
 
   private async complete(itemId: string, success = true, errorCode?: string): Promise<void> {

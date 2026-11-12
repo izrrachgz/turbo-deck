@@ -152,7 +152,7 @@ export interface DeckPageModel {
   modifiedUtc: string;
 }
 
-export type CellAnimationType = 'none' | 'fade' | 'slide' | 'zoom';
+export type CellAnimationType = 'none' | 'fade' | 'slide' | 'zoom' | 'spin' | 'flip' | 'bounce' | 'morph' | 'orbit' | 'blur';
 export type CellDisplaySize = 'small' | 'medium' | 'large' | 'fullscreen';
 
 export interface CellConfigModel {

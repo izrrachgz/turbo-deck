@@ -1,0 +1,14 @@
+<section class="td-animation-playground">
+  <header>
+    <div><h3>{{ 'deck.animationPlayground' | text }}</h3><p>{{ 'deck.animationPlaygroundHelp' | text }}</p></div>
+    <span>{{ 'deck.livePreview' | text }}</span>
+  </header>
+  <div class="td-animation-playground-stage">
+    <div class="td-animation-orbit-guide" aria-hidden="true"></div>
+    <div #sample class="td-animation-sample" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+  <footer>
+    <button type="button" class="td-button-secondary justify-center" (click)="preview('in')">{{ (playingDirection() === 'in' ? 'deck.animationPlaying' : 'deck.previewEntrance') | text }}</button>
+    <button type="button" class="td-button-secondary justify-center" (click)="preview('out')">{{ (playingDirection() === 'out' ? 'deck.animationPlaying' : 'deck.previewExit') | text }}</button>
+  </footer>
+</section>

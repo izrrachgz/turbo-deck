@@ -1,12 +1,12 @@
-import { Component, ElementRef, Input, OnDestroy, ViewChild, signal } from '@angular/core';
+import { Component, ElementRef, Input, OnDestroy, ViewChild, numberAttribute, signal } from '@angular/core';
 import { PitchShift, Player, gainToDb, start as startAudio } from 'tone';
 
-import { MediaAssetModel } from '../../../../../core/backend-api.service';
+import { CellAnimationType, MediaAssetModel } from '../../../../../core/backend-api.service';
 import { TextPipe } from '../../../../../core/i18n/text.pipe';
 import { AudioPlaybackProgressView, createAudioPlaybackProgress } from '../../../../../shared/media/audio-playback-progress';
+import { animateMediaElement } from '../../../../../shared/media/media-animation';
 
 export type CellDisplaySize = 'small' | 'medium' | 'large' | 'fullscreen';
-export type CellAnimationType = 'none' | 'fade' | 'slide' | 'zoom';
 
 @Component({
   selector: 'td-cell-media-preview',
@@ -19,7 +19,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
   @ViewChild('stage', { static: true }) private stage!: ElementRef<HTMLElement>;
   @Input() media?: MediaAssetModel;
   @Input() label = '';
-  @Input() playbackRate = 1;
+  @Input({ transform: numberAttribute }) playbackRate = 1;
   @Input() pitchSemitones = 0;
   @Input() displayDurationMilliseconds = 5000;
   @Input() displayPermanently = false;
@@ -72,7 +72,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
     image.alt = '';
     image.className = this.mediaClassName();
     image.onload = () => {
-      void this.animate(image, this.animationInType, this.animationInDurationMilliseconds, true);
+      void animateMediaElement(image, this.animationInType, this.animationInDurationMilliseconds, true);
       if (!this.displayPermanently) {
         this.completionTimer = setTimeout(() => void this.finishVisual(image), this.displayDurationMilliseconds);
       }
@@ -89,7 +89,7 @@ export class CellMediaPreviewComponent implements OnDestroy {
     video.controls = true;
     video.preload = 'auto';
     video.onloadedmetadata = () => {
-      void this.animate(video, this.animationInType, this.animationInDurationMilliseconds, true);
+      void animateMediaElement(video, this.animationInType, this.animationInDurationMilliseconds, true);
       void video.play().catch(error => this.fail(this.message(error)));
     };
     video.onended = () => void this.finishVisual(video);
@@ -213,38 +213,13 @@ export class CellMediaPreviewComponent implements OnDestroy {
   }
 
   private formatRate(rate: number): string {
-    return Number(rate.toFixed(2)).toString();
+    return Number(Number(rate).toFixed(2)).toString();
   }
 
   private async finishVisual(element: HTMLElement): Promise<void> {
     if (this.mediaElement !== element) return;
-    await this.animate(element, this.animationOutType, this.animationOutDurationMilliseconds, false);
+    await animateMediaElement(element, this.animationOutType, this.animationOutDurationMilliseconds, false);
     if (this.mediaElement === element) this.stopPlayback();
-  }
-
-  private async animate(
-    element: HTMLElement,
-    type: CellAnimationType,
-    durationMilliseconds: number,
-    entering: boolean,
-  ): Promise<void> {
-    element.style.opacity = '1';
-    if (type === 'none' || durationMilliseconds <= 0) return;
-    const visible = { opacity: 1, transform: 'translate(0) scale(1)' };
-    const hidden = type === 'slide'
-      ? { opacity: 0, transform: entering ? 'translateY(18%) scale(1)' : 'translateY(-18%) scale(1)' }
-      : type === 'zoom'
-        ? { opacity: 0, transform: entering ? 'translate(0) scale(.72)' : 'translate(0) scale(1.18)' }
-        : { opacity: 0, transform: 'translate(0) scale(1)' };
-    try {
-      await element.animate(entering ? [hidden, visible] : [visible, hidden], {
-        duration: durationMilliseconds,
-        easing: 'ease-in-out',
-        fill: 'forwards',
-      }).finished;
-    } catch {
-      // Replacing or closing a preview cancels its animation.
-    }
   }
 
   private mediaClassName(): string {
