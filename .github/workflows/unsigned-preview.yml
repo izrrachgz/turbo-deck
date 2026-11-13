@@ -133,17 +133,15 @@ jobs:
           $notes = @"
           ## Unsigned preview
 
-          This preview exists to provide a public release and installer sample while Turbo Deck applies for SignPath
-          Foundation open-source code signing. Windows will identify the installer as unsigned and may show SmartScreen
-          warnings. The in-app Update Wizard is disabled in this build.
+          This Windows installer is not code-signed. Windows may show SmartScreen warnings because its publisher cannot
+          be verified. The in-app Update Wizard is disabled in this build.
 
           Verify the installer using the attached SHA-256 checksum before running it.
 
-          ## Code signing policy
+          ## Source and security
 
-          Free code signing provided by SignPath.io, certificate by SignPath Foundation.
-
-          See the [Turbo Deck code-signing policy](https://github.com/izrrachgz/turbo-deck/blob/main/CODE_SIGNING_POLICY.md).
+          See the [Turbo Deck release guide](https://github.com/izrrachgz/turbo-deck/blob/main/docs/releasing.md) and
+          [security policy](https://github.com/izrrachgz/turbo-deck/blob/main/SECURITY.md).
           "@
 
           gh release create $env:RELEASE_TAG `

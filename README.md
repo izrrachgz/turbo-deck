@@ -66,18 +66,16 @@ the backend URL or credential.
 ```
 
 This builds the Angular application, publishes `TurboDeck.Backend.exe` as a self-contained single file, and creates an
-NSIS installer plus SHA-256 checksum under `artifacts/installer`. See [docs/releasing.md](docs/releasing.md) for signed
-release and cross-platform packaging requirements.
+NSIS installer plus SHA-256 checksum under `artifacts/installer`. See [docs/releasing.md](docs/releasing.md) for release
+and cross-platform packaging requirements.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/development.md](docs/development.md) for the current boundaries and
 extension points.
 
-## Code signing policy
+## Windows release status
 
-Free code signing provided by [SignPath.io](https://signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/).
+Turbo Deck's public Windows installers are currently distributed without a code-signing certificate. Windows may show
+a SmartScreen warning because the publisher cannot be verified. Verify the adjacent SHA-256 checksum before running an
+installer downloaded from a GitHub release.
 
-Official Windows releases will be built from this public repository and submitted for manual signing approval. Until
-that enrollment is complete, explicitly labelled preview installers may be unsigned and can trigger a Windows
-SmartScreen warning. See the [code-signing policy](CODE_SIGNING_POLICY.md), [privacy policy](PRIVACY.md),
-[security policy](SECURITY.md), and [release guide](docs/releasing.md).
+See the [privacy policy](PRIVACY.md), [security policy](SECURITY.md), and [release guide](docs/releasing.md).

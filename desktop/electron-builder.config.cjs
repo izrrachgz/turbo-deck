@@ -8,7 +8,7 @@ const externalSigning = process.env.TURBO_DECK_EXTERNAL_SIGNING === '1';
 const officialRelease = process.env.TURBO_DECK_OFFICIAL_RELEASE === '1';
 
 if (requireSigning && externalSigning) {
-  throw new Error('Local certificate signing and external SignPath signing are mutually exclusive.');
+  throw new Error('Local certificate signing and external signing are mutually exclusive.');
 }
 
 module.exports = {

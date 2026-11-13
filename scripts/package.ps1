@@ -22,7 +22,7 @@ if ($RequireSigning) {
 
 if ($ExternalSigningCandidate) {
     if ($env:GITHUB_ACTIONS -ne "true") {
-        throw "SignPath candidates may only be created by the reviewed GitHub Actions release workflow."
+        throw "External signing candidates may only be created by a reviewed GitHub Actions release workflow."
     }
 
     $env:TURBO_DECK_EXTERNAL_SIGNING = "1"
@@ -30,11 +30,11 @@ if ($ExternalSigningCandidate) {
 }
 
 if ($RequireSigning -and $ExternalSigningCandidate) {
-    throw "Use either -RequireSigning for a local certificate or -ExternalSigningCandidate for SignPath, not both."
+    throw "Use either -RequireSigning for a local certificate or -ExternalSigningCandidate, not both."
 }
 
 if ($Publish -and (-not $RequireSigning -or $ExternalSigningCandidate)) {
-    throw "Direct publishing requires local signing. SignPath candidates must be signed, verified, and published by the release workflow."
+    throw "Direct publishing requires local signing. External candidates must be signed, verified, and published by a release workflow."
 }
 
 if ($Publish -and [string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {
