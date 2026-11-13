@@ -20,7 +20,7 @@ branch and enter the exact acknowledgement requested by the workflow.
 
 That workflow:
 
-1. Builds the pinned `CommandQ.*` dependencies from their public source revision.
+1. Builds the pinned `CommandQ.*` dependencies from their source revision using a read-only repository token.
 2. Builds and tests the .NET backend and Angular/Electron applications.
 3. Creates a normal unsigned package with the Update Wizard disabled.
 4. Uploads the installer, checksum, and effective builder configuration as workflow evidence.
@@ -64,17 +64,34 @@ passwords, API tokens, or GitHub tokens. The SignPath workflow will supersede th
 
 Before applying:
 
-1. Publish the unsigned preview and verify that it installs and uninstalls on a clean Windows account.
-2. Enable multi-factor authentication for GitHub and SignPath accounts involved in development, review, or approval.
-3. Keep [the code-signing policy](../CODE_SIGNING_POLICY.md), [privacy policy](../PRIVACY.md), and
+1. Make the `command-q` source used by Turbo Deck publicly verifiable. A private maintainer-supplied component does not
+   satisfy SignPath Foundation's open-source and verifiable-build requirements.
+2. Publish the unsigned preview and verify that it installs and uninstalls on a clean Windows account.
+3. Enable multi-factor authentication for GitHub and SignPath accounts involved in development, review, or approval.
+4. Keep [the code-signing policy](../CODE_SIGNING_POLICY.md), [privacy policy](../PRIVACY.md), and
    [security policy](../SECURITY.md) public and accurate.
-4. Apply with repository `https://github.com/izrrachgz/turbo-deck`, the preview release URL, and its installer sample.
-5. Identify `@izrrachgz` as the current committer/reviewer and signing approver.
-6. Confirm the exact Turbo Deck-owned files SignPath will sign and exclude third-party Electron/framework binaries.
-7. Install or authorize the SignPath GitHub integration requested during onboarding.
-8. Store the assigned API token as the protected `SIGNPATH_API_TOKEN` GitHub Actions secret.
-9. Add the assigned non-secret organization, project, policy, and artifact-configuration identifiers to the official
+5. Apply with repository `https://github.com/izrrachgz/turbo-deck`, the preview release URL, and its installer sample.
+6. Identify `@izrrachgz` as the current committer/reviewer and signing approver.
+7. Confirm the exact Turbo Deck-owned files SignPath will sign and exclude third-party Electron/framework binaries.
+8. Install or authorize the SignPath GitHub integration requested during onboarding.
+9. Store the assigned API token as the protected `SIGNPATH_API_TOKEN` GitHub Actions secret.
+10. Add the assigned non-secret organization, project, policy, and artifact-configuration identifiers to the official
    workflow or protected GitHub environment variables.
+
+## Private CommandQ dependency access
+
+Until `command-q` is public, both GitHub workflows require a fine-grained personal access token stored as the Turbo Deck
+repository secret `COMMAND_Q_REPOSITORY_TOKEN`. Configure the token with:
+
+- Repository owner: `izrrachgz`
+- Repository access: only `command-q`
+- Repository permission: **Contents — Read-only**
+- No account permissions and no write permissions
+- A short, renewable expiration appropriate for CI
+
+The workflow passes this token only to the secondary checkout and disables persisted Git credentials afterward. GitHub
+does not provide repository secrets to workflows triggered from forks, so external pull requests cannot build this
+private dependency until its source becomes public.
 
 ## Official signed-release controls
 

@@ -25,6 +25,17 @@ jobs:
     steps:
       - name: Check out Turbo Deck
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verify private dependency access
+        shell: pwsh
+        env:
+          COMMAND_Q_REPOSITORY_TOKEN: ${{ secrets.COMMAND_Q_REPOSITORY_TOKEN }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:COMMAND_Q_REPOSITORY_TOKEN)) {
+              throw "Add the COMMAND_Q_REPOSITORY_TOKEN repository secret with read-only Contents access to izrrachgz/command-q."
+          }
 
       - name: Check out pinned CommandQ sources
         uses: actions/checkout@v7
@@ -32,6 +43,8 @@ jobs:
           repository: izrrachgz/command-q
           ref: 420750deb10e68b611bcf3f468fca6fb28ed7d76
           path: dependencies/command-q
+          token: ${{ secrets.COMMAND_Q_REPOSITORY_TOKEN }}
+          persist-credentials: false
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v6

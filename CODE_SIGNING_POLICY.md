@@ -28,8 +28,8 @@ is reviewed separately before approval. These roles will be updated if the maint
 ## Build and release controls
 
 - The release workflow uses only committed build scripts and lock files.
-- The shared `CommandQ.*` dependencies are built from the pinned public `command-q` source revision recorded in the
-  workflow.
+- The shared `CommandQ.*` dependencies are built from the pinned `command-q` source revision recorded in the workflow.
+  This dependency source must be made publicly verifiable before applying for SignPath Foundation signing.
 - Official release candidates are never published before signing completes successfully.
 - Release checksums and Electron updater metadata are generated from the final signed artifact.
 - Repository and SignPath access require multi-factor authentication.
