@@ -53,7 +53,6 @@ export class AppShellComponent {
         { labelKey: 'nav.settings', icon: 'settings-2', route: AppRoutePaths.settings },
         { labelKey: 'nav.advancedSettings', icon: 'database-zap', route: AppRoutePaths.advancedSettings },
         { labelKey: 'nav.docs', icon: 'book-open', route: AppRoutePaths.docs },
-        { labelKey: 'nav.updates', icon: 'refresh-cw', route: AppRoutePaths.updates },
         { labelKey: 'nav.openGithubIssue', icon: 'life-buoy', externalUrl: AppShellComponent.newIssueUrl },
         { labelKey: 'nav.about', icon: 'info', route: AppRoutePaths.about },
       ],

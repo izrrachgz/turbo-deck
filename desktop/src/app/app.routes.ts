@@ -63,12 +63,6 @@ export const APP_ROUTES: Routes = [
         data: { titleKey: AppRouteTitleKeys.docs },
       },
       {
-        path: AppRouteSegments.updates,
-        loadComponent: () =>
-          import('./features/system/updates/pages/updates/updates.page').then((component) => component.UpdatesPage),
-        data: { titleKey: AppRouteTitleKeys.updates },
-      },
-      {
         path: AppRouteSegments.about,
         loadComponent: () =>
           import('./features/system/about/pages/about/about.page').then((component) => component.AboutPage),

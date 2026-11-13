@@ -531,10 +531,12 @@ function registerIpcHandlers() {
     assertTrustedSender(event, mainWindow?.webContents);
     const target = new URL(String(value));
     const trustedTwitch = target.protocol === 'https:' && ['www.twitch.tv', 'dev.twitch.tv'].includes(target.hostname);
+    const trustedProfile = target.protocol === 'https:' && target.hostname === 'github.com' &&
+      (target.pathname === '/izrrachgz' || target.pathname === '/izrrachgz/');
     const trustedRepository = target.protocol === 'https:' && target.hostname === 'github.com' &&
       (target.pathname === '/izrrachgz/turbo-deck' || target.pathname.startsWith('/izrrachgz/turbo-deck/issues'));
     const trustedDonation = target.toString() === 'https://www.paypal.com/donate/?hosted_button_id=5M8HPH943MVV4';
-    if (!trustedTwitch && !trustedRepository && !trustedDonation) {
+    if (!trustedTwitch && !trustedProfile && !trustedRepository && !trustedDonation) {
       throw new Error('Blocked untrusted external URL.');
     }
     await shell.openExternal(target.toString());

@@ -1,4 +1,5 @@
 import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { LucideDynamicIcon } from '@lucide/angular';
 
 import { BackendApiService, DesktopAppInfo } from '../../../../../core/backend-api.service';
 import { TextPipe } from '../../../../../core/i18n/text.pipe';
@@ -7,10 +8,13 @@ import { ConfirmationDialogComponent } from '../../../../../shared/components/co
 @Component({
   selector: 'td-about-page',
   standalone: true,
-  imports: [ConfirmationDialogComponent, TextPipe],
+  imports: [ConfirmationDialogComponent, LucideDynamicIcon, TextPipe],
   templateUrl: './about.page.html',
+  styleUrl: './about.page.css',
 })
 export class AboutPage implements OnInit {
+  private static readonly donationUrl = 'https://www.paypal.com/donate/?hosted_button_id=5M8HPH943MVV4';
+  private static readonly profileUrl = 'https://github.com/izrrachgz';
   private readonly api = inject(BackendApiService);
   @ViewChild('licenseDialog') private licenseDialog?: ElementRef<HTMLDialogElement>;
   readonly info = signal<DesktopAppInfo | null>(null);
@@ -38,6 +42,14 @@ export class AboutPage implements OnInit {
 
   openRepository(): void {
     void this.api.openExternal('https://github.com/izrrachgz/turbo-deck');
+  }
+
+  openProfile(): void {
+    void this.api.openExternal(AboutPage.profileUrl);
+  }
+
+  openDonation(): void {
+    void this.api.openExternal(AboutPage.donationUrl);
   }
 
   quit(): void {

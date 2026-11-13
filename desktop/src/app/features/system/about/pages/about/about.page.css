@@ -1,0 +1,42 @@
+.td-about-layout { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+.td-about-product-card, .td-about-services-card { overflow: hidden; border: 1px solid var(--td-border); border-radius: .8rem; background: var(--td-surface); box-shadow: 0 12px 32px color-mix(in srgb, var(--td-shadow) 48%, transparent), inset 0 1px 0 color-mix(in srgb, var(--td-text) 5%, transparent); }
+.td-about-product-card { display: flex; flex-direction: column; padding: 1.25rem; }
+.td-about-product-header { display: flex; align-items: center; gap: 1.25rem; }
+.td-about-app-icon { width: 4.5rem; height: 4.5rem; flex: 0 0 auto; border-radius: 1rem; background: #090d12; padding: .45rem; box-shadow: 0 10px 22px var(--td-shadow); }
+.td-about-product-header h2 { margin: .25rem 0 0; color: var(--td-text); font-size: clamp(1.3rem, 2.4vw, 1.65rem); line-height: 1.1; }
+.td-about-product-header h2 span { color: var(--td-accent-text); font-size: .7em; font-weight: 500; }
+.td-about-version-label { margin: 0; color: var(--td-accent-text); font-size: .68rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.td-about-runtime { margin: .65rem 0 0; color: var(--td-text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: .7rem; line-height: 1.55; }
+.td-about-product-copy { display: flex; margin: 1.25rem 0 0; align-items: flex-start; gap: .7rem; border: 1px solid var(--td-border); border-radius: .65rem; background: var(--td-surface-muted); padding: .8rem; }
+.td-about-product-copy p { margin: 0; color: var(--td-text-secondary); font-size: .8rem; line-height: 1.55; }
+.td-about-product-accent { display: block; width: .22rem; height: 2rem; flex: 0 0 auto; border-radius: 999px; background: var(--td-accent); box-shadow: 0 0 16px var(--td-focus-soft); }
+.td-about-actions { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: 1rem; }
+.td-about-actions button { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; }
+.td-about-services-card { display: flex; min-width: 0; flex-direction: column; }
+.td-about-animation-card { width: min(calc(100% - 2rem), 19rem); margin-top: 1.5rem; grid-column: 1 / -1; justify-self: center; overflow: hidden; border: 1px solid var(--td-border); border-radius: .65rem; background: var(--td-surface); box-shadow: 0 12px 32px color-mix(in srgb, var(--td-shadow) 48%, transparent); }
+.td-about-day-night { position: relative; height: 7rem; overflow: hidden; background: #eff6ff; isolation: isolate; }
+.td-about-day-night > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 51%; }
+.td-about-night-frame { z-index: 1; animation: td-about-night-cycle 24s ease-in-out infinite; opacity: 0; }
+.td-about-sky-orbit { position: absolute; z-index: 2; inset: 0 7% 55% 52%; overflow: hidden; pointer-events: none; }
+.td-about-sun, .td-about-moon { position: absolute; width: clamp(.7rem, 12%, 1rem); aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; }
+.td-about-sun { background: #fbbf24; box-shadow: 0 0 0 .3rem rgb(251 191 36 / 15%), 0 0 1rem rgb(251 191 36 / 58%); animation: td-about-sun-cycle 24s linear infinite; }
+.td-about-moon { background: #f8fafc; box-shadow: inset -.38rem .1rem #c7d2fe, 0 0 .8rem rgb(224 231 255 / 65%); animation: td-about-moon-cycle 24s linear infinite; opacity: 0; }
+.td-about-services-content { display: flex; flex: 1; flex-direction: column; padding: 1rem; }
+.td-about-services-eyebrow { margin: 0; color: var(--td-accent-text); font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.td-about-services-content > h2 { margin: .3rem 0 0; color: var(--td-text); font-size: clamp(1.25rem, 2.5vw, 1.55rem); }
+.td-about-services-content > p:not(.td-about-services-eyebrow) { margin: .65rem 0 0; color: var(--td-text-secondary); font-size: .85rem; line-height: 1.6; }
+.td-about-contact-button { display: flex; width: 100%; margin-top: .9rem; align-items: center; justify-content: space-between; border: 1px solid var(--td-accent); border-radius: .55rem; background: var(--td-accent); padding: .65rem .8rem; color: var(--td-on-accent); font-size: .8rem; font-weight: 800; transition: background-color 150ms ease, transform 150ms ease; }
+.td-about-contact-button span { display: inline-flex; align-items: center; gap: .5rem; }
+.td-about-contact-button:hover { background: var(--td-accent-hover); transform: translateY(-1px); }
+.td-about-support { display: flex; margin-top: .8rem; align-items: center; justify-content: space-between; gap: .8rem; border-top: 1px solid var(--td-border); padding-top: .8rem; }
+.td-about-support strong { color: var(--td-text); font-size: .78rem; }
+.td-about-support p { max-width: 27rem; margin: .25rem 0 0; color: var(--td-text-muted); font-size: .7rem; line-height: 1.45; }
+.td-about-donate-button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: .4rem; border: 1px solid color-mix(in srgb, #ef4444 58%, var(--td-border)); border-radius: .5rem; background: color-mix(in srgb, #ef4444 10%, var(--td-surface)); padding: .6rem .75rem; color: color-mix(in srgb, #ef4444 72%, var(--td-text)); font-size: .75rem; font-weight: 800; }
+.td-about-donate-button:hover { background: color-mix(in srgb, #ef4444 18%, var(--td-surface)); }
+.td-about-donate-button svg { fill: currentColor; }
+@keyframes td-about-night-cycle { 0%, 44% { opacity: 0; } 50%, 94% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes td-about-sun-cycle { 0% { left: 5%; top: 82%; opacity: 0; } 5% { left: 12%; top: 72%; opacity: 1; } 25% { left: 50%; top: 24%; opacity: 1; } 45% { left: 88%; top: 72%; opacity: 1; } 49%, 100% { left: 95%; top: 82%; opacity: 0; } }
+@keyframes td-about-moon-cycle { 0%, 49% { left: 5%; top: 82%; opacity: 0; } 54% { left: 12%; top: 72%; opacity: 1; } 75% { left: 50%; top: 24%; opacity: 1; } 95% { left: 88%; top: 72%; opacity: 1; } 100% { left: 95%; top: 82%; opacity: 0; } }
+@media (max-width: 850px) { .td-about-layout { grid-template-columns: 1fr; } .td-about-animation-card { grid-column: 1; } }
+@media (max-width: 560px) { .td-about-product-header, .td-about-support { align-items: flex-start; flex-direction: column; } .td-about-app-icon { width: 4.5rem; height: 4.5rem; } .td-about-actions button, .td-about-donate-button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .td-about-night-frame, .td-about-sun, .td-about-moon { animation: none; } .td-about-night-frame, .td-about-moon { display: none; } .td-about-sun { left: 50%; top: 24%; opacity: 1; } }
