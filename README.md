@@ -72,7 +72,7 @@ release and cross-platform packaging requirements.
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/development.md](docs/development.md) for the current boundaries and
 extension points.
 
-## Code signing and privacy
+## Code signing policy
 
 Free code signing provided by [SignPath.io](https://signpath.io/), certificate by
 [SignPath Foundation](https://signpath.org/).
