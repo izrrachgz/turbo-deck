@@ -37,6 +37,23 @@ jobs:
               throw "Add the COMMAND_Q_REPOSITORY_TOKEN repository secret with read-only Contents access to izrrachgz/command-q."
           }
 
+          $headers = @{
+              Accept = "application/vnd.github+json"
+              Authorization = "Bearer $env:COMMAND_Q_REPOSITORY_TOKEN"
+              "X-GitHub-Api-Version" = "2022-11-28"
+          }
+
+          try {
+              $repository = Invoke-RestMethod -Uri "https://api.github.com/repos/izrrachgz/command-q" -Headers $headers
+          }
+          catch {
+              throw "COMMAND_Q_REPOSITORY_TOKEN exists but cannot read izrrachgz/command-q. Replace it with a fine-grained PAT whose selected repository is command-q and whose Contents permission is Read-only."
+          }
+
+          if ($repository.full_name -ne "izrrachgz/command-q") {
+              throw "COMMAND_Q_REPOSITORY_TOKEN resolved an unexpected repository."
+          }
+
       - name: Check out pinned CommandQ sources
         uses: actions/checkout@v7
         with:
