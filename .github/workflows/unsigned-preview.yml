@@ -138,6 +138,12 @@ jobs:
           warnings. The in-app Update Wizard is disabled in this build.
 
           Verify the installer using the attached SHA-256 checksum before running it.
+
+          ## Code signing policy
+
+          Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+          See the [Turbo Deck code-signing policy](https://github.com/izrrachgz/turbo-deck/blob/main/CODE_SIGNING_POLICY.md).
           "@
 
           gh release create $env:RELEASE_TAG `
