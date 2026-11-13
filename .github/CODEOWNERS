@@ -1,0 +1,5 @@
+# All files require my approval
+* @izrrachgz
+
+# Protect the ownership configuration itself
+/.github/CODEOWNERS @izrrachgz
