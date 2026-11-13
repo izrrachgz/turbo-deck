@@ -21,7 +21,7 @@ if (!Object.hasOwn(targets, runtime)) {
 
 const cli = require.resolve('electron-builder/out/cli/cli.js');
 const cliArguments = [cli, '--config', path.resolve(__dirname, '..', 'electron-builder.config.cjs'), ...targets[runtime]];
-if (publish) cliArguments.push('--publish', 'always');
+cliArguments.push('--publish', publish ? 'always' : 'never');
 const result = spawnSync(process.execPath, cliArguments, {
   cwd: path.resolve(__dirname, '..'),
   env: { ...process.env, TURBO_DECK_RUNTIME: runtime },

@@ -1,5 +1,7 @@
 # Turbo Deck
 
+[![Quality](https://github.com/izrrachgz/turbo-deck/actions/workflows/quality.yml/badge.svg)](https://github.com/izrrachgz/turbo-deck/actions/workflows/quality.yml)
+
 Turbo Deck is a local-first Electron application with an Angular 22 renderer and a self-contained .NET 10 backend. It
 starts from the `electron-backend` branch of `command-q-back` and follows the secure process topology used by Turbo
 Reactor without carrying over any Reactor-specific features.
@@ -69,3 +71,13 @@ release and cross-platform packaging requirements.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/development.md](docs/development.md) for the current boundaries and
 extension points.
+
+## Code signing and privacy
+
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/).
+
+Official Windows releases will be built from this public repository and submitted for manual signing approval. Until
+that enrollment is complete, explicitly labelled preview installers may be unsigned and can trigger a Windows
+SmartScreen warning. See the [code-signing policy](CODE_SIGNING_POLICY.md), [privacy policy](PRIVACY.md),
+[security policy](SECURITY.md), and [release guide](docs/releasing.md).

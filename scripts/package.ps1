@@ -2,6 +2,7 @@ param(
     [ValidateSet("win-x64", "win-arm64", "linux-x64", "linux-arm64", "osx-x64", "osx-arm64")]
     [string]$Runtime = "win-x64",
     [switch]$RequireSigning,
+    [switch]$ExternalSigningCandidate,
     [switch]$Publish
 )
 
@@ -10,13 +11,30 @@ Set-StrictMode -Version Latest
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $env:NODE_OPTIONS = "--use-system-ca"
+Remove-Item Env:TURBO_DECK_REQUIRE_SIGNING -ErrorAction SilentlyContinue
+Remove-Item Env:TURBO_DECK_EXTERNAL_SIGNING -ErrorAction SilentlyContinue
+Remove-Item Env:TURBO_DECK_OFFICIAL_RELEASE -ErrorAction SilentlyContinue
 
 if ($RequireSigning) {
     $env:TURBO_DECK_REQUIRE_SIGNING = "1"
+    $env:TURBO_DECK_OFFICIAL_RELEASE = "1"
 }
 
-if ($Publish -and -not $RequireSigning) {
-    throw "Publishing requires -RequireSigning. Unsigned test artifacts must never be published as releases."
+if ($ExternalSigningCandidate) {
+    if ($env:GITHUB_ACTIONS -ne "true") {
+        throw "SignPath candidates may only be created by the reviewed GitHub Actions release workflow."
+    }
+
+    $env:TURBO_DECK_EXTERNAL_SIGNING = "1"
+    $env:TURBO_DECK_OFFICIAL_RELEASE = "1"
+}
+
+if ($RequireSigning -and $ExternalSigningCandidate) {
+    throw "Use either -RequireSigning for a local certificate or -ExternalSigningCandidate for SignPath, not both."
+}
+
+if ($Publish -and (-not $RequireSigning -or $ExternalSigningCandidate)) {
+    throw "Direct publishing requires local signing. SignPath candidates must be signed, verified, and published by the release workflow."
 }
 
 if ($Publish -and [string]::IsNullOrWhiteSpace($env:GH_TOKEN)) {

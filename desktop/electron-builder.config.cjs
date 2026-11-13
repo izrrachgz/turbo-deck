@@ -4,6 +4,12 @@ const path = require('node:path');
 
 const runtime = process.env.TURBO_DECK_RUNTIME || 'win-x64';
 const requireSigning = process.env.TURBO_DECK_REQUIRE_SIGNING === '1';
+const externalSigning = process.env.TURBO_DECK_EXTERNAL_SIGNING === '1';
+const officialRelease = process.env.TURBO_DECK_OFFICIAL_RELEASE === '1';
+
+if (requireSigning && externalSigning) {
+  throw new Error('Local certificate signing and external SignPath signing are mutually exclusive.');
+}
 
 module.exports = {
   appId: 'com.turbodeck.desktop',
@@ -11,7 +17,7 @@ module.exports = {
   asar: true,
   npmRebuild: false,
   forceCodeSigning: requireSigning,
-  extraMetadata: { turboDeckSignedRelease: requireSigning },
+  extraMetadata: { turboDeckSignedRelease: officialRelease },
   electronFuses: {
     runAsNode: false,
     enableCookieEncryption: true,

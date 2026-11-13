@@ -1,0 +1,71 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Backend and desktop verification
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out Turbo Deck
+        uses: actions/checkout@v7
+
+      - name: Check out pinned CommandQ sources
+        uses: actions/checkout@v7
+        with:
+          repository: izrrachgz/command-q
+          ref: 420750deb10e68b611bcf3f468fca6fb28ed7d76
+          path: dependencies/command-q
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.15.0
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Build pinned CommandQ packages
+        shell: pwsh
+        run: |
+          ./dependencies/command-q/scripts/build.ps1 -Configuration Release
+          Copy-Item -Recurse -Force ./dependencies/command-q-build-output ../command-q-build-output
+
+      - name: Restore backend
+        run: dotnet restore ./backend/turbo-deck-backend.sln
+
+      - name: Build backend
+        run: dotnet build ./backend/turbo-deck-backend.sln --configuration Release --no-restore
+
+      - name: Test backend
+        run: dotnet test ./backend/turbo-deck-backend.sln --configuration Release --no-build
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Audit shipped desktop dependencies
+        working-directory: desktop
+        run: npm audit --omit=dev --audit-level=moderate
+
+      - name: Verify desktop
+        working-directory: desktop
+        run: npm run verify

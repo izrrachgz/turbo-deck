@@ -1,0 +1,119 @@
+name: Publish unsigned preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      acknowledgement:
+        description: Type PUBLISH UNSIGNED PREVIEW to confirm the Windows installer will not be code-signed
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: unsigned-preview
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Build and publish unsigned Windows preview
+    if: github.ref == 'refs/heads/main' && inputs.acknowledgement == 'PUBLISH UNSIGNED PREVIEW'
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out Turbo Deck
+        uses: actions/checkout@v7
+
+      - name: Check out pinned CommandQ sources
+        uses: actions/checkout@v7
+        with:
+          repository: izrrachgz/command-q
+          ref: 420750deb10e68b611bcf3f468fca6fb28ed7d76
+          path: dependencies/command-q
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.15.0
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Build pinned CommandQ packages
+        shell: pwsh
+        run: |
+          ./dependencies/command-q/scripts/build.ps1 -Configuration Release
+          Copy-Item -Recurse -Force ./dependencies/command-q-build-output ../command-q-build-output
+
+      - name: Verify backend
+        shell: pwsh
+        run: |
+          dotnet restore ./backend/turbo-deck-backend.sln
+          dotnet build ./backend/turbo-deck-backend.sln --configuration Release --no-restore
+          dotnet test ./backend/turbo-deck-backend.sln --configuration Release --no-build
+
+      - name: Verify desktop
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm ci
+          npm audit --omit=dev --audit-level=moderate
+          npm run verify
+
+      - name: Package unsigned preview
+        shell: pwsh
+        run: ./scripts/package.ps1 -Runtime win-x64
+
+      - name: Read package version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw ./desktop/package.json | ConvertFrom-Json).version
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=v$version-unsigned-preview" >> $env:GITHUB_OUTPUT
+
+      - name: Upload unsigned build evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: turbo-deck-${{ steps.version.outputs.version }}-unsigned-preview
+          path: |
+            artifacts/installer/Turbo-Deck-Setup-*.exe
+            artifacts/installer/Turbo-Deck-Setup-*.exe.sha256
+            artifacts/installer/builder-effective-config.yaml
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish unsigned GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        shell: pwsh
+        run: |
+          if (gh release view $env:RELEASE_TAG 2>$null) {
+              throw "Release $env:RELEASE_TAG already exists. Increment desktop/package.json before publishing another preview."
+          }
+
+          $notes = @"
+          ## Unsigned preview
+
+          This preview exists to provide a public release and installer sample while Turbo Deck applies for SignPath
+          Foundation open-source code signing. Windows will identify the installer as unsigned and may show SmartScreen
+          warnings. The in-app Update Wizard is disabled in this build.
+
+          Verify the installer using the attached SHA-256 checksum before running it.
+          "@
+
+          gh release create $env:RELEASE_TAG `
+              ./artifacts/installer/Turbo-Deck-Setup-*.exe `
+              ./artifacts/installer/Turbo-Deck-Setup-*.exe.sha256 `
+              --target $env:GITHUB_SHA `
+              --title "Turbo Deck $env:RELEASE_VERSION unsigned preview" `
+              --notes $notes `
+              --prerelease
