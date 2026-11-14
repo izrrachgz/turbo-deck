@@ -5,7 +5,11 @@ using Api.Configuration;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
 
 BackendRuntime runtime = BackendBootstrap.Configure(builder);
 builder.ConfigureLogging(runtime);

@@ -28,7 +28,7 @@ module.exports = {
   },
   directories: { output: '../artifacts/installer' },
   files: [
-    { from: 'electron', to: 'electron', filter: ['**/*'] },
+    { from: 'electron', to: 'electron', filter: ['**/*', '!**/*.test.js'] },
     { from: 'dist/turbo-deck-ui/browser', to: 'ui', filter: ['**/*'] },
     'package.json'
   ],

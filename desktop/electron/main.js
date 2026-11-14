@@ -9,6 +9,7 @@ const os = require('node:os');
 const path = require('node:path');
 const readline = require('node:readline');
 const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
+const { createBackendLaunch, findMissingPackagedBackendPaths } = require('./backend-launch');
 const { assertTrustedSender } = require('./ipc-trust');
 const { mediaUploadPath } = require('./media-upload');
 const { createMediaProtocolHandler, MEDIA_PROTOCOL_PRIVILEGES } = require('./media-protocol');
@@ -162,18 +163,14 @@ function createBackendEnvironment(dataDirectory) {
 }
 
 function resolveBackendLaunch() {
-  if (app.isPackaged) {
-    const executable = process.platform === 'win32' ? 'TurboDeck.Backend.exe' : 'TurboDeck.Backend';
-    return { command: path.join(process.resourcesPath, 'backend', executable), args: [] };
-  }
-  const project = path.resolve(__dirname, '..', '..', 'backend', 'Api', 'Api.csproj');
-  return { command: 'dotnet', args: ['run', '--no-launch-profile', '--project', project, '--'] };
+  return createBackendLaunch(app.isPackaged, process.platform, process.resourcesPath, __dirname);
 }
 
 async function startBackend() {
   const launch = resolveBackendLaunch();
-  if (app.isPackaged && !fs.existsSync(launch.command)) {
-    throw new Error(`Packaged backend was not found at ${launch.command}`);
+  const missingPaths = findMissingPackagedBackendPaths(launch, fs.existsSync);
+  if (missingPaths.length > 0) {
+    throw new Error(`The packaged backend is incomplete. Missing: ${missingPaths.join(', ')}`);
   }
 
   const dataDirectory = path.join(app.getPath('userData'), 'backend');
@@ -182,12 +179,18 @@ async function startBackend() {
   backendAddresses = [];
   backendBrowserHostName = undefined;
   backendProcess = spawn(launch.command, [...launch.args, `--ParentPid=${process.pid}`], {
+    cwd: launch.workingDirectory,
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
     env: createBackendEnvironment(dataDirectory)
   });
+  let startupErrorOutput = '';
   backendProcess.stderr.setEncoding('utf8');
-  backendProcess.stderr.on('data', chunk => console.error(`[backend] ${chunk.trimEnd()}`));
+  backendProcess.stderr.on('data', chunk => {
+    const text = chunk.trimEnd();
+    console.error(`[backend] ${text}`);
+    if (!backendUrl) startupErrorOutput = `${startupErrorOutput}${text}\n`.slice(-4000);
+  });
 
   const ready = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('The backend did not become ready within 30 seconds.')), 30_000);
@@ -217,7 +220,10 @@ async function startBackend() {
       const wasReady = Boolean(backendUrl);
       backendUrl = undefined;
       backendProcess = undefined;
-      if (!wasReady) reject(new Error(`Backend exited during startup with code ${code}.`));
+      if (!wasReady) {
+        const detail = startupErrorOutput.trim();
+        reject(new Error(`Backend exited during startup with code ${code}.${detail ? `\n\n${detail}` : ''}`));
+      }
       else if (code === 23 && !quitting) void restartBackend();
       else if (!quitting) showFatalStartupError(new Error(`The backend stopped unexpectedly with code ${code}.`));
     });

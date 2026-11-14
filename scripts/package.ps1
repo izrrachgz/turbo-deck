@@ -71,6 +71,9 @@ finally {
     Pop-Location
 }
 
+& (Join-Path $PSScriptRoot "verify-package-layout.ps1") -Runtime $Runtime
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 $installerDirectory = Join-Path $repositoryRoot "artifacts\installer"
 $artifacts = Get-ChildItem -LiteralPath $installerDirectory -File |
     Where-Object { $_.Extension -in ".exe", ".AppImage", ".dmg", ".zip" -and $_.Name -notlike "*.blockmap" }
