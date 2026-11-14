@@ -20,10 +20,16 @@ function selectBrowserClientBaseUrl(controlUrl, advertisedUrls = [], preferredHo
       // Ignore malformed backend announcements and retain the private control endpoint.
     }
   }
-  const secure = candidates.find(candidate => candidate.protocol === 'https:');
-  const selected = secure ?? candidates[0];
+  const wildcardHosts = new Set(['0.0.0.0', '[::]', '::']);
+  const loopbackHosts = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
+  const usable = candidates.filter(candidate => !wildcardHosts.has(candidate.hostname));
+  const secure = usable.find(candidate => candidate.protocol === 'https:' && !loopbackHosts.has(candidate.hostname))
+    ?? usable.find(candidate => candidate.protocol === 'https:');
+  const network = usable.find(candidate => !loopbackHosts.has(candidate.hostname));
+  const selected = secure ?? network ?? usable[0] ?? candidates[0];
   if (selected) {
-    selected.hostname = preferredHostName || '127.0.0.1';
+    if (preferredHostName) selected.hostname = preferredHostName;
+    else if (wildcardHosts.has(selected.hostname)) selected.hostname = '127.0.0.1';
     return selected.toString();
   }
   return controlUrl;

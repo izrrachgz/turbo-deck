@@ -4,6 +4,7 @@ interface ParsedListenerAddress {
   normalized: string;
   key: string;
   wildcard: boolean;
+  loopback: boolean;
 }
 
 export function listenerAddressErrors(addresses: readonly string[]): ListenerAddressError[] {
@@ -54,17 +55,29 @@ export function isWildcardListenerAddress(address: string): boolean {
   return parseListenerAddress(address)?.wildcard ?? false;
 }
 
+export function hasLanListenerAddress(addresses: readonly string[]): boolean {
+  return addresses.some(address => {
+    const parsed = parseListenerAddress(address);
+    return parsed !== null && !parsed.loopback;
+  });
+}
+
 function parseListenerAddress(value: string): ParsedListenerAddress | null {
   const address = value.trim().toLowerCase();
   if (address === 'localhost' || address === '127.0.0.1') {
-    return { normalized: address, key: 'ipv4:127.0.0.1', wildcard: false };
+    return { normalized: address, key: 'ipv4:127.0.0.1', wildcard: false, loopback: true };
   }
   if (address === '*' || address === '+' || address === '0.0.0.0') {
-    return { normalized: address, key: 'ipv4:0.0.0.0', wildcard: true };
+    return { normalized: address, key: 'ipv4:0.0.0.0', wildcard: true, loopback: false };
   }
-  if (isIpv4(address)) return { normalized: address, key: `ipv4:${address}`, wildcard: false };
-  if (address === '::') return { normalized: address, key: 'ipv6:::0', wildcard: true };
-  if (isIpv6(address)) return { normalized: address, key: `ipv6:${canonicalIpv6(address)}`, wildcard: false };
+  if (isIpv4(address)) {
+    return { normalized: address, key: `ipv4:${address}`, wildcard: false, loopback: address.startsWith('127.') };
+  }
+  if (address === '::') return { normalized: address, key: 'ipv6:::0', wildcard: true, loopback: false };
+  if (isIpv6(address)) {
+    const canonical = canonicalIpv6(address);
+    return { normalized: address, key: `ipv6:${canonical}`, wildcard: false, loopback: canonical === '::1' };
+  }
   return null;
 }
 

@@ -110,6 +110,9 @@ public sealed class SystemController(
             return addressError;
         if (request.Mode == NetworkMode.Lan && request.Addresses.Length == 0)
             return "At least one LAN address is required.";
+        if (request.Mode == NetworkMode.Lan && !request.Addresses.Any(address =>
+                NetworkAddressCatalog.TryParse(address, out IPAddress parsed) && !IPAddress.IsLoopback(parsed)))
+            return "LAN mode requires at least one non-loopback listener address.";
         string? originError = ValidateBrowserOrigins(request.CorsAllowedOrigins);
         if (originError is not null)
             return originError;

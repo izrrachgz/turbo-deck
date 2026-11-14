@@ -13,6 +13,7 @@ import {
   uniqueBrowserOrigins,
 } from '../../browser-origin';
 import {
+  hasLanListenerAddress,
   isWildcardListenerAddress,
   ListenerAddressError,
   listenerAddressErrors,
@@ -75,6 +76,7 @@ export class NetworkPage implements OnInit {
       this.mode = settings.mode;
       this.addresses = uniqueListenerAddresses(settings.addresses);
       if (!this.addresses.length) this.addresses = ['127.0.0.1'];
+      if (this.mode === 1 && !hasLanListenerAddress(this.addresses)) this.addresses = ['0.0.0.0'];
       this.suggestedAddresses = settings.suggestedAddresses;
       this.port = settings.port;
       this.discoveryEnabled = settings.discoveryEnabled;
@@ -123,6 +125,7 @@ export class NetworkPage implements OnInit {
 
   setMode(mode: number): void {
     this.mode = mode;
+    if (mode === 1 && !hasLanListenerAddress(this.addresses)) this.addresses = ['0.0.0.0'];
     this.allowInsecureHttp = mode === 1 && !this.httpsEnabled;
   }
 

@@ -42,6 +42,17 @@ describe('NetworkPage', () => {
     expect(page.addressDraft).toEqual(['0.0.0.0']);
   });
 
+  it('replaces a loopback-only listener when LAN mode is selected', () => {
+    const api = { getNetwork: vi.fn().mockResolvedValue(networkSettings()) };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new NetworkPage());
+    page.addresses = ['127.0.0.1'];
+
+    page.setMode(1);
+
+    expect(page.addresses).toEqual(['0.0.0.0']);
+  });
+
   it('validates and normalizes browser origins when the editor is saved', () => {
     const api = { getNetwork: vi.fn().mockResolvedValue(networkSettings()) };
     TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });

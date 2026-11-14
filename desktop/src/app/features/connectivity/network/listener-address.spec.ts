@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  hasLanListenerAddress,
   isWildcardListenerAddress,
   listenerAddressErrors,
   listenerAddressKey,
@@ -38,5 +39,11 @@ describe('listener addresses', () => {
     expect(uniqueListenerAddresses(['127.0.0.1', '0.0.0.0'])).toEqual(['0.0.0.0']);
     expect(isWildcardListenerAddress('0.0.0.0')).toBe(true);
     expect(isWildcardListenerAddress('127.0.0.1')).toBe(false);
+  });
+
+  it('distinguishes LAN listeners from IPv4 and IPv6 loopback addresses', () => {
+    expect(hasLanListenerAddress(['localhost', '127.0.0.2', '::1'])).toBe(false);
+    expect(hasLanListenerAddress(['192.168.1.24'])).toBe(true);
+    expect(hasLanListenerAddress(['0.0.0.0'])).toBe(true);
   });
 });

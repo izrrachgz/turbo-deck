@@ -116,6 +116,22 @@ public sealed class SystemNetworkEndpointTest
     }
 
     [Fact]
+    public async Task Lan_mode_rejects_a_loopback_only_listener()
+    {
+        await using var factory = new ApiFactory();
+        using HttpClient client = factory.CreateAuthenticatedClient();
+
+        HttpResponseMessage response = await client.PutAsJsonAsync(
+            "/system/network",
+            CreateRequest(["127.0.0.1"], mode: 1, allowInsecureHttp: true),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("non-loopback listener", body);
+    }
+
+    [Fact]
     public async Task Network_settings_reject_invalid_and_duplicate_browser_origins()
     {
         await using var factory = new ApiFactory();
@@ -142,15 +158,17 @@ public sealed class SystemNetworkEndpointTest
     private static object CreateRequest(
         string[] addresses,
         string[]? corsAllowedOrigins = null,
-        bool httpsEnabled = false) => new
+        bool httpsEnabled = false,
+        int mode = 0,
+        bool allowInsecureHttp = false) => new
     {
-        mode = 0,
+        mode,
         addresses,
         port = 52024,
         discoveryEnabled = false,
         instanceName = "Turbo Deck Backend",
         corsAllowedOrigins = corsAllowedOrigins ?? [],
-        allowInsecureHttp = false,
+        allowInsecureHttp,
         https = new { enabled = httpsEnabled, certificatePath = string.Empty, certificatePassword = string.Empty }
     };
 }

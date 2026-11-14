@@ -500,13 +500,13 @@ function registerIpcHandlers() {
   ipcMain.handle(VISUALIZER_OPEN_CHANNEL, async event => {
     assertTrustedSender(event, mainWindow?.webContents);
     await shell.openExternal(createVisualizerUrl(
-      selectBrowserClientBaseUrl(backendUrl, backendAddresses, backendBrowserHostName)));
+      selectBrowserClientBaseUrl(backendUrl, backendBaseUrls(), backendBrowserHostName)));
   });
 
   ipcMain.handle(DECK_OPEN_CHANNEL, async event => {
     assertTrustedSender(event, mainWindow?.webContents);
     await shell.openExternal(createDeckExplorerUrl(
-      selectBrowserClientBaseUrl(backendUrl, backendAddresses, backendBrowserHostName)));
+      selectBrowserClientBaseUrl(backendUrl, backendBaseUrls(), backendBrowserHostName)));
   });
 
   ipcMain.handle(LAN_ACCESS_CHANNEL, async event => {
