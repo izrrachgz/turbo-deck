@@ -10,6 +10,7 @@ const path = require('node:path');
 const readline = require('node:readline');
 const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 const { createBackendLaunch, findMissingPackagedBackendPaths } = require('./backend-launch');
+const { startBackendWithRetry, stopBackendProcess } = require('./backend-process');
 const { assertTrustedSender } = require('./ipc-trust');
 const { mediaUploadPath } = require('./media-upload');
 const { createMediaProtocolHandler, MEDIA_PROTOCOL_PRIVILEGES } = require('./media-protocol');
@@ -166,7 +167,7 @@ function resolveBackendLaunch() {
   return createBackendLaunch(app.isPackaged, process.platform, process.resourcesPath, __dirname);
 }
 
-async function startBackend() {
+async function startBackendOnce() {
   const launch = resolveBackendLaunch();
   const missingPaths = findMissingPackagedBackendPaths(launch, fs.existsSync);
   if (missingPaths.length > 0) {
@@ -231,6 +232,10 @@ async function startBackend() {
   backendUrl = ready.url;
   backendAddresses = ready.addresses;
   backendBrowserHostName = ready.browserHostName;
+}
+
+async function startBackend() {
+  return startBackendWithRetry(startBackendOnce);
 }
 
 function normalizeReadyUrl(value) {
@@ -646,7 +651,7 @@ async function backendRequest(apiPath, init) {
   const response = await fetch(new URL(apiPath, backendUrl), {
     ...init,
     headers,
-    signal: AbortSignal.timeout(120_000)
+    signal: init.signal ?? AbortSignal.timeout(120_000)
   });
   const text = await response.text();
   if (text.length > MAX_API_RESPONSE_CHARACTERS) throw new Error('Backend response is too large.');
@@ -659,15 +664,19 @@ async function backendRequest(apiPath, init) {
 
 async function stopBackend() {
   await stopPlaybackRealtime();
-  if (!backendProcess || backendProcess.exitCode !== null || !backendUrl) return;
+  const processToStop = backendProcess;
+  if (!processToStop || processToStop.exitCode !== null) return;
   try {
-    await backendRequest('/system/shutdown', { method: 'POST' });
-  } catch {
-    // Parent-process monitoring is the final cleanup path.
+    await stopBackendProcess(processToStop, () => {
+      if (!backendUrl) throw new Error('The backend control endpoint is unavailable.');
+      return backendRequest('/system/shutdown', {
+        method: 'POST',
+        signal: AbortSignal.timeout(2_000),
+      });
+    });
+  } finally {
+    if (backendProcess === processToStop) backendProcess = undefined;
   }
-  setTimeout(() => {
-    if (backendProcess && backendProcess.exitCode === null) backendProcess.kill();
-  }, 3_000).unref();
 }
 
 function showFatalStartupError(error) {
