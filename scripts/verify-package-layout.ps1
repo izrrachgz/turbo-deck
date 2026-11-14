@@ -50,4 +50,9 @@ if ($manifest -notmatch "(?m)^version:\s+$([regex]::Escape($version))\s*$") {
     throw "latest.yml does not identify package version $version."
 }
 
+node (Join-Path $PSScriptRoot "verify-packaged-ui.js") (Join-Path $resourcesDirectory "app.asar")
+if ($LASTEXITCODE -ne 0) {
+    throw "Packaged UI verification failed."
+}
+
 Write-Host "Verified the packaged Turbo Deck $version Windows runtime layout."
