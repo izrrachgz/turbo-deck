@@ -35,7 +35,7 @@ public sealed class ApplicationMigrationRunnerTest
             .Select("TimeZone")
             .FirstAsync<string>(cancellationToken: TestContext.Current.CancellationToken);
 
-        Assert.Equal(10, records.Count());
+        Assert.Equal(11, records.Count());
         Assert.Equal(
             ["AppSettings", "CellConfig", "DeckPage", "MediaAsset", "MigrationRecord", "Profile", "StoredFile", "TwitchRewardBinding"],
             tables);

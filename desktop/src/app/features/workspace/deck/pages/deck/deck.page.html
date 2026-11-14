@@ -55,151 +55,105 @@
 </td-confirmation-dialog>
 
 @if (cellDialogOpen()) {
-<td-confirmation-dialog [open]="true" (openChange)="setCellDialogOpen($event)" title="deck.configureCell" confirmLabel="action.save" icon="pencil" [wide]="true" [processing]="savingCell()" [confirmDisabled]="cellForm.invalid" (confirmed)="saveCell()">
-  <form class="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,.85fr)]" [formGroup]="cellForm" (ngSubmit)="saveCell()">
-    <div class="grid content-start gap-5">
-      <section class="rounded-xl border border-slate-200 bg-slate-50 p-5">
-        <header><h3 class="font-semibold text-slate-950">{{ 'deck.cellContent' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'deck.cellContentHelp' | text }}</p></header>
-        <div class="mt-5 grid gap-4">
-          <td-text-input formControlName="label" [label]="'deck.cellName' | text" [maxLength]="80" />
-          <div>
-            <span class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.thumbnail' | text }}</span>
-            <article class="td-cell-asset td-cell-thumbnail-asset">
-              @if (selectedThumbnailBackground(); as thumbnailBackground) {
-                <div class="td-cell-thumbnail-preview" [style.background-image]="thumbnailBackground" role="img" [attr.aria-label]="selectedThumbnail()?.displayName || ('deck.thumbnail' | text)"></div>
-              } @else {
-                <div class="td-cell-thumbnail-preview td-cell-asset-placeholder" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
-              }
-              <div class="td-cell-asset-copy">
-                <strong>{{ selectedThumbnail()?.displayName || ('deck.noThumbnail' | text) }}</strong>
-                <span>{{ 'deck.thumbnailUploadHelp' | text }}</span>
-              </div>
-              <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingThumbnail()" (click)="uploadThumbnail()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedThumbnailBackground() ? 'deck.replaceThumbnail' : 'deck.addThumbnail') | text }}</button>
-            </article>
-          </div>
-          <div>
-            <span class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.mediaFile' | text }}</span>
-            <article class="td-cell-asset">
-              <div class="td-cell-media-file-icon" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
-              <div class="td-cell-asset-copy">
-                @if (selectedMedia(); as media) {
-                  <div class="flex min-w-0 items-center gap-2"><strong>{{ media.displayName }}</strong><span class="td-media-kind-badge">{{ media.kind }}</span></div>
-                } @else {
-                  <strong>{{ 'deck.noMedia' | text }}</strong>
-                }
-                <span>{{ 'deck.mediaUploadHelp' | text }}</span>
-              </div>
-              <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingMedia()" (click)="uploadMedia()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedMedia() ? 'deck.replaceMedia' : 'deck.addMedia') | text }}</button>
-            </article>
-          </div>
-        </div>
-      </section>
+<td-confirmation-dialog
+  [open]="true"
+  (openChange)="setCellDialogOpen($event)"
+  title="deck.configureCell"
+  [confirmLabel]="cellEditorStep() === 3 ? 'action.save' : 'action.next'"
+  [secondaryLabel]="cellEditorStep() > 1 ? 'action.back' : ''"
+  icon="pencil"
+  [extraWide]="true"
+  [processing]="savingCell()"
+  (secondary)="previousCellEditorStep()"
+  (confirmed)="advanceCellEditor()">
+  <ol class="td-wizard-steps" aria-label="Cell configuration progress">
+    <li [class.td-wizard-step-active]="cellEditorStep() === 1" [class.td-wizard-step-complete]="cellEditorStep() > 1"><span>1</span><strong>{{ 'deck.editorStepBasic' | text }}</strong></li>
+    <li [class.td-wizard-step-active]="cellEditorStep() === 2" [class.td-wizard-step-complete]="cellEditorStep() > 2"><span>2</span><strong>{{ 'deck.editorStepConfiguration' | text }}</strong></li>
+    <li [class.td-wizard-step-active]="cellEditorStep() === 3"><span>3</span><strong>{{ 'deck.editorStepPreview' | text }}</strong></li>
+  </ol>
 
-      @if (selectedMediaKind() === 'image' || selectedMediaKind() === 'video') {
-        <section class="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 class="font-semibold text-slate-950">{{ 'deck.visualConfiguration' | text }}</h3>
-          <div class="mt-4 grid gap-4">
-            @if (selectedMediaKind() === 'image') {
-              <label class="text-sm font-medium text-slate-700">{{ 'deck.imageDuration' | text }}
-                <select class="td-field mt-1.5" formControlName="imageDuration">
-                  <option value="3000">{{ 'deck.duration3s' | text }}</option>
-                  <option value="5000">{{ 'deck.duration5s' | text }}</option>
-                  <option value="10000">{{ 'deck.duration10s' | text }}</option>
-                  <option value="permanent">{{ 'deck.durationPermanent' | text }}</option>
-                </select>
-              </label>
-            }
-            <label class="text-sm font-medium text-slate-700">{{ 'deck.displaySize' | text }}
-              <select class="td-field mt-1.5" formControlName="displaySize">
-                <option value="small">{{ 'deck.sizeSmall' | text }}</option>
-                <option value="medium">{{ 'deck.sizeMedium' | text }}</option>
-                <option value="large">{{ 'deck.sizeLarge' | text }}</option>
-                <option value="fullscreen">{{ 'deck.sizeFullscreen' | text }}</option>
-              </select>
-            </label>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="text-sm font-medium text-slate-700">{{ 'deck.animationIn' | text }}
-                <select class="td-field mt-1.5" formControlName="animationInType">
-                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option>
-                </select>
-              </label>
-              <label class="text-sm font-medium text-slate-700">{{ 'deck.durationSeconds' | text }}<input class="td-field mt-1.5" type="number" min="0" max="10" step="0.1" formControlName="animationInDurationSeconds" /></label>
-              <label class="text-sm font-medium text-slate-700">{{ 'deck.animationOut' | text }}
-                <select class="td-field mt-1.5" formControlName="animationOutType">
-                  <option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option>
-                </select>
-              </label>
-              <label class="text-sm font-medium text-slate-700">{{ 'deck.durationSeconds' | text }}<input class="td-field mt-1.5" type="number" min="0" max="10" step="0.1" formControlName="animationOutDurationSeconds" /></label>
+  <form class="td-cell-editor-form" [formGroup]="cellForm" (ngSubmit)="advanceCellEditor()">
+    @if (cellEditorStep() === 1) {
+      <div class="td-wizard-page">
+        <section class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+          <header><h3 class="font-semibold text-slate-950">{{ 'deck.cellContent' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'deck.cellContentHelp' | text }}</p></header>
+          <div class="mt-5 grid gap-4">
+            <td-text-input formControlName="label" [label]="'deck.cellName' | text" [maxLength]="80" />
+            <div>
+              <span class="mb-1.5 block text-sm font-medium text-slate-700">{{ 'deck.thumbnail' | text }}</span>
+              <article class="td-cell-asset td-cell-thumbnail-asset">
+                @if (selectedThumbnailBackground(); as thumbnailBackground) {
+                  <div class="td-cell-thumbnail-preview" [style.background-image]="thumbnailBackground" role="img" [attr.aria-label]="selectedThumbnail()?.displayName || ('deck.thumbnail' | text)"></div>
+                } @else {
+                  <div class="td-cell-thumbnail-preview td-cell-asset-placeholder" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
+                }
+                <div class="td-cell-asset-copy"><strong>{{ selectedThumbnail()?.displayName || ('deck.noThumbnail' | text) }}</strong><span>{{ 'deck.thumbnailUploadHelp' | text }}</span></div>
+                <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingThumbnail()" (click)="uploadThumbnail()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedThumbnailBackground() ? 'deck.replaceThumbnail' : 'deck.addThumbnail') | text }}</button>
+              </article>
             </div>
           </div>
         </section>
-      } @else if (selectedMediaKind() === 'audio') {
-        <section class="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 class="font-semibold text-slate-950">{{ 'deck.audioConfiguration' | text }}</h3>
-          <div class="mt-4 grid gap-4">
-            <label class="text-sm font-medium text-slate-700">{{ 'deck.playbackRate' | text }}: <output>{{ cellForm.controls.playbackRate.value }}x</output>
-              <span class="td-playback-rate-slider-shell">
-                <input
-                  class="block w-full accent-teal-600"
-                  type="range"
-                  min="0"
-                  max="4"
-                  step="0.25"
-                  formControlName="playbackRate"
-                  (input)="enforceMinimumPlaybackRate($event)" />
-                <span class="td-playback-rate-blocked" aria-hidden="true"></span>
-              </span>
-              <span class="mt-1 flex justify-between text-xs text-slate-500" aria-hidden="true"><span>0.25x</span><span>2x</span><span>4x</span></span>
-            </label>
-            <label class="text-sm font-medium text-slate-700">{{ 'deck.pitchShift' | text }}: <output>{{ cellForm.controls.pitchSemitones.value > 0 ? '+' : '' }}{{ cellForm.controls.pitchSemitones.value }}</output>
-              <input class="mt-2 w-full accent-teal-600" type="range" min="-24" max="24" step="1" formControlName="pitchSemitones" />
-              <span class="mt-1 flex justify-between text-xs text-slate-500"><span>-24</span><span>0</span><span>+24</span></span>
-            </label>
+        <section class="td-cell-behavior">
+          <header><h3>{{ 'deck.cellBehavior' | text }}</h3><p>{{ 'deck.cellBehaviorHelp' | text }}</p></header>
+          <div class="td-cell-behavior-options">
+            <label class="td-cell-behavior-option"><input class="peer sr-only" type="checkbox" role="switch" formControlName="queueOverride" /><span class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-teal-600 peer-checked:after:translate-x-5"></span><span class="td-cell-behavior-copy"><strong>{{ 'deck.overrideQueue' | text }}</strong><small>{{ 'deck.overrideQueueHelp' | text }}</small></span></label>
+            <label class="td-cell-behavior-option"><input class="peer sr-only" type="checkbox" role="switch" formControlName="enabled" /><span class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-teal-600 peer-checked:after:translate-x-5"></span><span class="td-cell-behavior-copy"><strong>{{ 'deck.enabled' | text }}</strong><small>{{ 'deck.enabledHelp' | text }}</small></span></label>
           </div>
         </section>
-      }
+      </div>
+    }
 
-      <section class="td-cell-behavior">
-        <header><h3>{{ 'deck.cellBehavior' | text }}</h3><p>{{ 'deck.cellBehaviorHelp' | text }}</p></header>
-        <div class="td-cell-behavior-options">
-          <label class="td-cell-behavior-option">
-            <input class="peer sr-only" type="checkbox" role="switch" formControlName="queueOverride" />
-            <span class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-teal-600 peer-checked:after:translate-x-5"></span>
-            <span class="td-cell-behavior-copy"><strong>{{ 'deck.overrideQueue' | text }}</strong><small>{{ 'deck.overrideQueueHelp' | text }}</small></span>
-          </label>
-          <label class="td-cell-behavior-option">
-            <input class="peer sr-only" type="checkbox" role="switch" formControlName="enabled" />
-            <span class="relative mt-0.5 h-6 w-11 shrink-0 rounded-full bg-slate-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-teal-600 peer-checked:after:translate-x-5"></span>
-            <span class="td-cell-behavior-copy"><strong>{{ 'deck.enabled' | text }}</strong><small>{{ 'deck.enabledHelp' | text }}</small></span>
-          </label>
-        </div>
-      </section>
-    </div>
+    @if (cellEditorStep() === 2) {
+      <div class="td-wizard-page">
+        <section class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+            <header><h3 class="font-semibold text-slate-950">{{ 'deck.mediaFile' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'deck.mediaUploadHelp' | text }}</p></header>
+            <article class="td-cell-asset mt-4">
+              <div class="td-cell-media-file-icon" aria-hidden="true"><svg lucideIcon="file" size="22"></svg></div>
+              <div class="td-cell-asset-copy">@if (selectedMedia(); as media) { <div class="flex min-w-0 items-center gap-2"><strong>{{ media.displayName }}</strong><span class="td-media-kind-badge">{{ media.kind }}</span></div> } @else { <strong>{{ 'deck.noMedia' | text }}</strong> }<span>{{ 'deck.mediaUploadHelp' | text }}</span></div>
+              <button type="button" class="td-button-secondary td-cell-asset-action" [disabled]="uploadingMedia()" (click)="uploadMedia()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ (selectedMedia() ? 'deck.replaceMedia' : 'deck.addMedia') | text }}</button>
+            </article>
+        </section>
+        @if (selectedMediaKind() === 'image' || selectedMediaKind() === 'video') {
+            <section class="rounded-xl border border-slate-200 bg-white p-5">
+              <h3 class="font-semibold text-slate-950">{{ 'deck.visualConfiguration' | text }}</h3>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                @if (selectedMediaKind() === 'image') { <label class="text-sm font-medium text-slate-700">{{ 'deck.imageDuration' | text }}<select class="td-field mt-1.5" formControlName="imageDuration"><option value="3000">{{ 'deck.duration3s' | text }}</option><option value="5000">{{ 'deck.duration5s' | text }}</option><option value="10000">{{ 'deck.duration10s' | text }}</option><option value="permanent">{{ 'deck.durationPermanent' | text }}</option></select></label> }
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.displaySize' | text }}<select class="td-field mt-1.5" formControlName="displaySize"><option value="small">{{ 'deck.sizeSmall' | text }}</option><option value="medium">{{ 'deck.sizeMedium' | text }}</option><option value="large">{{ 'deck.sizeLarge' | text }}</option><option value="fullscreen">{{ 'deck.sizeFullscreen' | text }}</option></select></label>
+              </div>
+            </section>
+        } @else if (selectedMediaKind() === 'audio') {
+            <section class="rounded-xl border border-slate-200 bg-white p-5">
+              <h3 class="font-semibold text-slate-950">{{ 'deck.audioConfiguration' | text }}</h3>
+              <div class="mt-4 grid gap-5 sm:grid-cols-2">
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.playbackRate' | text }}: <output>{{ cellForm.controls.playbackRate.value }}x</output><span class="td-playback-rate-slider-shell"><input class="block w-full accent-teal-600" type="range" min="0" max="4" step="0.25" formControlName="playbackRate" (input)="enforceMinimumPlaybackRate($event)" /><span class="td-playback-rate-blocked" aria-hidden="true"></span></span><span class="mt-1 flex justify-between text-xs text-slate-500" aria-hidden="true"><span>0.25x</span><span>2x</span><span>4x</span></span></label>
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.pitchShift' | text }}: <output>{{ cellForm.controls.pitchSemitones.value > 0 ? '+' : '' }}{{ cellForm.controls.pitchSemitones.value }}</output><input class="mt-2 w-full accent-teal-600" type="range" min="-24" max="24" step="1" formControlName="pitchSemitones" /><span class="mt-1 flex justify-between text-xs text-slate-500"><span>-24</span><span>0</span><span>+24</span></span></label>
+              </div>
+            </section>
+        }
+      </div>
+    }
 
-    <aside class="grid content-start gap-4 lg:sticky lg:top-0">
-      <td-cell-media-preview
-        [media]="selectedMedia()"
-        [label]="cellForm.controls.label.value"
-        [playbackRate]="cellForm.controls.playbackRate.value"
-        [pitchSemitones]="cellForm.controls.pitchSemitones.value"
-        [displayDurationMilliseconds]="previewDisplayDuration()"
-        [displayPermanently]="cellForm.controls.imageDuration.value === 'permanent'"
-        [displaySize]="cellForm.controls.displaySize.value"
-        [animationInType]="cellForm.controls.animationInType.value"
-        [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000"
-        [animationOutType]="cellForm.controls.animationOutType.value"
-        [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000"
-        [testDisabled]="cellForm.invalid"
-      />
-      @if (selectedMediaKind() === 'image' || selectedMediaKind() === 'video') {
-        <td-animation-playground
-          [animationInType]="cellForm.controls.animationInType.value"
-          [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000"
-          [animationOutType]="cellForm.controls.animationOutType.value"
-          [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000"
-        />
-      }
-    </aside>
+    @if (cellEditorStep() === 3) {
+      <div class="td-wizard-page">
+          @if (selectedMediaKind() === 'image' || selectedMediaKind() === 'video') {
+            <section class="rounded-xl border border-slate-200 bg-white p-5">
+              <h3 class="font-semibold text-slate-950">{{ 'deck.animationPlayground' | text }}</h3><p class="mt-1 text-sm text-slate-600">{{ 'deck.animationPlaygroundHelp' | text }}</p>
+              <div class="td-animation-controls mt-4">
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.animationIn' | text }}<select class="td-field mt-1.5" formControlName="animationInType"><option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option></select></label>
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.duration' | text }}<span class="td-field-group mt-1.5"><input class="td-field" type="number" min="0" max="10" step="0.1" formControlName="animationInDurationSeconds" /><span class="td-animation-unit" aria-hidden="true">s</span></span></label>
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.animationOut' | text }}<select class="td-field mt-1.5" formControlName="animationOutType"><option value="none">{{ 'deck.animationNone' | text }}</option><option value="fade">{{ 'deck.animationFade' | text }}</option><option value="slide">{{ 'deck.animationSlide' | text }}</option><option value="zoom">{{ 'deck.animationZoom' | text }}</option><option value="spin">{{ 'deck.animationSpin' | text }}</option><option value="flip">{{ 'deck.animationFlip' | text }}</option><option value="bounce">{{ 'deck.animationBounce' | text }}</option><option value="morph">{{ 'deck.animationMorph' | text }}</option><option value="orbit">{{ 'deck.animationOrbit' | text }}</option><option value="blur">{{ 'deck.animationBlur' | text }}</option></select></label>
+                <label class="text-sm font-medium text-slate-700">{{ 'deck.duration' | text }}<span class="td-field-group mt-1.5"><input class="td-field" type="number" min="0" max="10" step="0.1" formControlName="animationOutDurationSeconds" /><span class="td-animation-unit" aria-hidden="true">s</span></span></label>
+              </div>
+            </section>
+            <div class="td-presentation-previews">
+              <td-animation-playground [animationInType]="cellForm.controls.animationInType.value" [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000" [animationOutType]="cellForm.controls.animationOutType.value" [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000" />
+              <td-cell-media-preview [media]="selectedMedia()" [label]="cellForm.controls.label.value" [playbackRate]="cellForm.controls.playbackRate.value" [pitchSemitones]="cellForm.controls.pitchSemitones.value" [displayDurationMilliseconds]="previewDisplayDuration()" [displayPermanently]="cellForm.controls.imageDuration.value === 'permanent'" [displaySize]="cellForm.controls.displaySize.value" [animationInType]="cellForm.controls.animationInType.value" [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000" [animationOutType]="cellForm.controls.animationOutType.value" [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000" [testDisabled]="cellForm.invalid" />
+            </div>
+          } @else {
+            <td-cell-media-preview [media]="selectedMedia()" [label]="cellForm.controls.label.value" [playbackRate]="cellForm.controls.playbackRate.value" [pitchSemitones]="cellForm.controls.pitchSemitones.value" [displayDurationMilliseconds]="previewDisplayDuration()" [displayPermanently]="cellForm.controls.imageDuration.value === 'permanent'" [displaySize]="cellForm.controls.displaySize.value" [animationInType]="cellForm.controls.animationInType.value" [animationInDurationMilliseconds]="cellForm.controls.animationInDurationSeconds.value * 1000" [animationOutType]="cellForm.controls.animationOutType.value" [animationOutDurationMilliseconds]="cellForm.controls.animationOutDurationSeconds.value * 1000" [testDisabled]="cellForm.invalid" />
+          }
+      </div>
+    }
   </form>
 </td-confirmation-dialog>
 }

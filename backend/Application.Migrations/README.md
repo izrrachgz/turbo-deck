@@ -15,3 +15,5 @@ application preferences.
 Migration 8 backfills missing numbered pages so every active profile owns all eight page positions.
 Migration 9 adds permanent-image behavior, display-size presets, and bounded enter/exit transition configuration to
 cells.
+Migration 10 extends the animation constraints with the advanced animation set.
+Migration 11 is an intentionally empty compatibility checkpoint. It prevents the identifier from being reused after an unreleased experimental migration was reverted.

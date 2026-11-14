@@ -21,9 +21,9 @@ public sealed class EmbeddedMigrationScriptSourceTest
 
         var scripts = await source.GetScriptsAsync(engine, TestContext.Current.CancellationToken);
 
-        Assert.Equal(10, scripts.Count);
-        Assert.Equal([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L], scripts.Select(script => script.MigrationId));
-        Assert.Equal(["Core", "Deck", "Media", "Playback", "Twitch", "Deck", "Settings", "Deck", "Deck", "Deck"],
+        Assert.Equal(11, scripts.Count);
+        Assert.Equal([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L], scripts.Select(script => script.MigrationId));
+        Assert.Equal(["Core", "Deck", "Media", "Playback", "Twitch", "Deck", "Settings", "Deck", "Deck", "Deck", "Core"],
             scripts.Select(script => script.Module));
         Assert.Contains("MigrationRecord", scripts[0].Content, StringComparison.Ordinal);
         Assert.Contains("StoredFile", scripts[0].Content, StringComparison.Ordinal);

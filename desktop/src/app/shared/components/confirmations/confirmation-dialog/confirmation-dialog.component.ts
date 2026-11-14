@@ -23,9 +23,13 @@ export class ConfirmationDialogComponent implements AfterViewChecked {
   @Input() confirmDisabled = false;
   @Input() hideCancel = false;
   @Input() wide = false;
+  @Input() extraWide = false;
+  @Input() secondaryLabel = '';
+  @Input() secondaryDisabled = false;
   @Input() allowOverflow = false;
   @Output() openChange = new EventEmitter<boolean>();
   @Output() confirmed = new EventEmitter<void>();
+  @Output() secondary = new EventEmitter<void>();
 
   ngAfterViewChecked(): void {
     const element = this.dialog?.nativeElement;

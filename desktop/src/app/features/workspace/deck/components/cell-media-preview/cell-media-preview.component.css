@@ -1,4 +1,12 @@
 .td-cell-preview-panel {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
+:host { display: block; height: 100%; }
+
+.td-cell-preview-panel {
   border: 1px solid var(--td-border);
   border-radius: .75rem;
   background: var(--td-surface-muted);
@@ -11,6 +19,7 @@
   position: relative;
   display: grid;
   min-height: 18rem;
+  flex: 1 1 auto;
   margin-top: 1rem;
   place-items: center;
   overflow: hidden;

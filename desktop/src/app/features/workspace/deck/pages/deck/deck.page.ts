@@ -68,6 +68,7 @@ export class DeckPage implements OnInit {
   readonly selectedPageId = signal<number | null>(null);
   readonly profileDialogOpen = signal(false);
   readonly cellDialogOpen = signal(false);
+  readonly cellEditorStep = signal<1 | 2 | 3>(1);
   readonly selectedPosition = signal<GridPosition | null>(null);
   readonly positions: readonly GridPosition[] = Array.from({ length: 32 }, (_, index) => ({
     rowIndex: Math.floor(index / 8),
@@ -196,7 +197,11 @@ export class DeckPage implements OnInit {
   async saveCell(): Promise<void> {
     const pageId = this.selectedPageId();
     const position = this.selectedPosition();
-    if (!pageId || !position || this.cellForm.invalid) return;
+    if (!pageId || !position) return;
+    if (this.cellForm.invalid) {
+      this.cellForm.markAllAsTouched();
+      return;
+    }
     this.savingCell.set(true);
     this.error.set('');
     try {
@@ -229,6 +234,33 @@ export class DeckPage implements OnInit {
     } finally {
       this.savingCell.set(false);
     }
+  }
+
+  async advanceCellEditor(): Promise<void> {
+    if (this.currentCellEditorStepInvalid()) {
+      this.markCurrentCellEditorStepTouched();
+      return;
+    }
+    const step = this.cellEditorStep();
+    if (step < 3) {
+      this.cellEditorStep.set((step + 1) as 2 | 3);
+      return;
+    }
+    await this.saveCell();
+  }
+
+  previousCellEditorStep(): void {
+    const step = this.cellEditorStep();
+    if (step > 1) this.cellEditorStep.set((step - 1) as 1 | 2);
+  }
+
+  currentCellEditorStepInvalid(): boolean {
+    const controls = this.cellForm.controls;
+    if (this.cellEditorStep() === 1)
+      return controls.label.invalid;
+    if (this.cellEditorStep() === 2)
+      return controls.mediaAssetId.invalid || controls.playbackRate.invalid || controls.pitchSemitones.invalid;
+    return controls.animationInDurationSeconds.invalid || controls.animationOutDurationSeconds.invalid;
   }
 
   async uploadMedia(): Promise<void> {
@@ -362,6 +394,7 @@ export class DeckPage implements OnInit {
   private disposeCellEditor(): void {
     this.cellPreview?.stop();
     this.cellEditorSession += 1;
+    this.cellEditorStep.set(1);
     this.selectedPosition.set(null);
     this.cellForm.reset({
       label: '',
@@ -381,6 +414,22 @@ export class DeckPage implements OnInit {
     });
     this.cellForm.markAsPristine();
     this.cellForm.markAsUntouched();
+  }
+
+  private markCurrentCellEditorStepTouched(): void {
+    const controls = this.cellForm.controls;
+    if (this.cellEditorStep() === 1) {
+      controls.label.markAsTouched();
+      return;
+    }
+    if (this.cellEditorStep() === 2) {
+      controls.mediaAssetId.markAsTouched();
+      controls.playbackRate.markAsTouched();
+      controls.pitchSemitones.markAsTouched();
+      return;
+    }
+    controls.animationInDurationSeconds.markAsTouched();
+    controls.animationOutDurationSeconds.markAsTouched();
   }
 
   private rememberMediaAsset(created: MediaAssetModel): void {

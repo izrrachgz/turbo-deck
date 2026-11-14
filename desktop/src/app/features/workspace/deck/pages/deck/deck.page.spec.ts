@@ -88,6 +88,21 @@ describe('DeckPage cell editor', () => {
     expect(page.selectedThumbnail()?.displayName).toBe('Cell artwork');
     expect(page.selectedThumbnailBackground()).not.toBeNull();
   });
+
+  it('advances the cell wizard only when the current step is valid', async () => {
+    const page = createPage({});
+    page.cells.set([cell(4, 1, 2)]);
+    await page.activateCell({ rowIndex: 1, columnIndex: 2 });
+
+    await page.advanceCellEditor();
+    expect(page.cellEditorStep()).toBe(2);
+
+    await page.advanceCellEditor();
+    expect(page.cellEditorStep()).toBe(3);
+    page.previousCellEditorStep();
+    expect(page.cellEditorStep()).toBe(2);
+  });
+
 });
 
 function createPage(api: object): DeckPage {
