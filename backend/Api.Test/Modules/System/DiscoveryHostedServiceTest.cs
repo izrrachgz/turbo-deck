@@ -25,7 +25,7 @@ public sealed class DiscoveryHostedServiceTest
         Assert.Equal("turbo-deck.local", profile.HostName.ToString());
         SRVRecord service = Assert.Single(profile.Resources.OfType<SRVRecord>());
         Assert.Equal(profile.HostName, service.Target);
-        AddressRecord address = Assert.Single(profile.Resources.OfType<AddressRecord>());
+        Makaretu.Dns.AddressRecord address = Assert.Single(profile.Resources.OfType<Makaretu.Dns.AddressRecord>());
         Assert.Equal(profile.HostName, address.Name);
         Assert.Equal(IPAddress.Parse("192.168.1.20"), address.Address);
     }

@@ -1,6 +1,6 @@
 # Api
 
-The .NET 10 executable host. It owns Kestrel loopback/LAN binding, machine credentials, CORS/TLS policy, mDNS
+The .NET 11 executable host. It owns Kestrel loopback/LAN binding, machine credentials, CORS/TLS policy, mDNS
 advertisement, lifecycle control, request-culture selection, structured logging, Files HTTP transport, and the generic
 SignalR hub.
 

@@ -1,6 +1,6 @@
 # Turbo Deck backend
 
-A .NET 10 backend for the Turbo Deck Electron application. It preserves the modular API, CQRS application, domain,
+A .NET 11 backend for the Turbo Deck Electron application. It preserves the modular API, CQRS application, domain,
 infrastructure, and embedded migration boundaries while adding Deck, Settings, Media, Playback, and Twitch product modules to
 the reusable Files and Realtime foundation.
 

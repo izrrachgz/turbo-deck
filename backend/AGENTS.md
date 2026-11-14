@@ -2,7 +2,7 @@
 
 ## Solution
 
-- Framework: .NET 10.
+- Framework: .NET 11.
 - Solution: `turbo-deck-backend.sln`.
 - Restore/build/test: `dotnet restore`, `dotnet build .\turbo-deck-backend.sln`, `dotnet test`.
 - Helper scripts: `scripts/build.ps1`, `scripts/test.ps1`, and `scripts/run-api.ps1`.

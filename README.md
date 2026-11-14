@@ -2,7 +2,7 @@
 
 [![Quality](https://github.com/izrrachgz/turbo-deck/actions/workflows/quality.yml/badge.svg)](https://github.com/izrrachgz/turbo-deck/actions/workflows/quality.yml)
 
-Turbo Deck is a local-first Electron application with an Angular 22 renderer and a self-contained .NET 10 backend. It
+Turbo Deck is a local-first Electron application with an Angular 22 renderer and a self-contained .NET 11 backend. It
 starts from the `electron-backend` branch of `command-q-back` and follows the secure process topology used by Turbo
 Reactor without carrying over any Reactor-specific features.
 
@@ -39,7 +39,7 @@ manual Check → Download → Verify → Apply update workflow that is enabled o
 
 ## Prerequisites
 
-- .NET SDK 10.0.403 or a compatible later feature band
+- .NET SDK 11.0.100 or a compatible later feature band
 - Node.js 24.15.0 (the package also accepts the compatible Node 22 and 26 lines)
 - The local `CommandQ.*` NuGet packages expected by `backend/NuGet.Config`
 
