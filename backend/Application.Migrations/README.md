@@ -17,3 +17,4 @@ Migration 9 adds permanent-image behavior, display-size presets, and bounded ent
 cells.
 Migration 10 extends the animation constraints with the advanced animation set.
 Migration 11 is an intentionally empty compatibility checkpoint. It prevents the identifier from being reused after an unreleased experimental migration was reverted.
+Migration 12 removes legacy fourth-row cells and narrows the grid constraint to three rows by eight columns.

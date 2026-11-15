@@ -28,7 +28,7 @@ internal sealed class CreateProfileCommandHandler(
             throw new InvalidDataException("A maximum of eight profiles is supported.");
 
         DateTime now = timeProvider.GetCurrentUtcDateTime();
-        int sortOrder = profiles.Length == 0 ? 1 : profiles.Max(profile => profile.SortOrder) + 1;
+        int sortOrder = Enumerable.Range(1, 8).First(order => profiles.All(profile => profile.SortOrder != order));
         DbConnection connection = (DbConnection)repository.Db.Connection;
         bool closeConnection = connection.State != ConnectionState.Open;
         if (closeConnection)

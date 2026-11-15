@@ -25,6 +25,8 @@ declare global {
       restartBackend(): Promise<void>;
       selectAndUploadFile(purpose?: string): Promise<unknown | undefined>;
       selectAndUploadMedia(displayName?: string, mediaKind?: 'any' | 'image'): Promise<unknown | undefined>;
+      exportProfile(profileId: number, profileName: string): Promise<{ fileName: string } | undefined>;
+      importProfile(): Promise<unknown | undefined>;
       openVisualizer(): Promise<void>;
       openDeckExplorer(): Promise<void>;
       onPlaybackQueueChanged(callback: () => void): () => void;

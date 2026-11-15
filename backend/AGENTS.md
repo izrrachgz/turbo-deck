@@ -116,7 +116,8 @@ intentional ports; it must not use repositories, SqlKata, raw connections, or co
   singleton `AppSettings`; migration 3 adds `MediaAsset` and cell playback configuration; migration 4 adds image
   display duration; migration 5 adds `TwitchRewardBinding`; migration 6 adds cell thumbnails; migration 7 adds the IANA
   timezone setting; migration 8 backfills the full eight-page set for every active profile; migration 9 adds visual
-  configuration; migration 10 adds advanced animations; migration 11 is an intentionally empty compatibility checkpoint. Twitch OAuth tokens never belong in the database.
+configuration; migration 10 adds advanced animations; migration 11 is an intentionally empty compatibility checkpoint;
+migration 12 reduces the grid to three rows by eight columns. Twitch OAuth tokens never belong in the database.
 - Do not add row-level security or account session context to this base.
 
 ## Coding conventions

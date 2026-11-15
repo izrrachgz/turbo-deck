@@ -50,3 +50,5 @@ forward-only migration is safe for existing installations.
 Migration 8 fills any missing numbered pages so every active profile has positions 1 through 8.
 Migration 9 adds cell permanence, display-size, and enter/exit transition fields with equivalent defaults and bounds
 for all four engines.
+Migration 10 adds advanced animations, migration 11 is an empty compatibility checkpoint, and migration 12 removes
+legacy fourth-row cells before narrowing the grid constraint to three rows by eight columns.

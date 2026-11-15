@@ -108,6 +108,48 @@ internal sealed class InMemoryPlaybackQueue(IRealtimePublisher realtimePublisher
         return snapshot;
     }
 
+    public async Task<PlaybackQueueSnapshotModel> RemoveCellsAsync(
+        IReadOnlySet<long> cellConfigIds,
+        CancellationToken cancellationToken = default)
+    {
+        PlaybackQueueItemModel? next = null;
+        PlaybackQueueSnapshotModel snapshot;
+        bool removedCurrent;
+        bool changed;
+        lock (_sync)
+        {
+            removedCurrent = _current is not null && cellConfigIds.Contains(_current.CellConfigId);
+            if (removedCurrent)
+                _current = null;
+            int initialPendingCount = _pending.Count;
+            LinkedListNode<PlaybackQueueItemModel>? node = _pending.First;
+            while (node is not null)
+            {
+                LinkedListNode<PlaybackQueueItemModel>? following = node.Next;
+                if (cellConfigIds.Contains(node.Value.CellConfigId))
+                    _pending.Remove(node);
+                node = following;
+            }
+            if (removedCurrent && _pending.First is not null)
+            {
+                next = _pending.First.Value;
+                _pending.RemoveFirst();
+                _current = next;
+            }
+            changed = removedCurrent || initialPendingCount != _pending.Count + (next is null ? 0 : 1);
+            snapshot = Snapshot();
+        }
+
+        if (!changed)
+            return snapshot;
+        if (removedCurrent)
+            await PublishAsync(PlaybackRealtimeContract.StopRequested, new { reason = "profile-deleted" }, cancellationToken);
+        if (next is not null)
+            await PublishAsync(PlaybackRealtimeContract.Requested, next, cancellationToken);
+        await PublishAsync(PlaybackRealtimeContract.QueueChanged, snapshot, cancellationToken);
+        return snapshot;
+    }
+
     public async Task<PlaybackQueueSnapshotModel> MoveAsync(
         Guid itemId,
         int offset,

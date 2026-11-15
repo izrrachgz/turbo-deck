@@ -22,7 +22,7 @@ application data directory.
 
 The implemented product slices include a Command Q-aligned routed shell, grouped navigation, English/Spanish UI
 catalogs, theme palettes, persisted preferences with a searchable IANA timezone selector, an API-backed profile/page
-4x8 deck grid, media upload and metadata,
+3x8 deck grid, media upload and metadata,
 automatic numeric pages, per-cell background thumbnails, media-specific playback controls and previews, persisted
 image/video sizing and transitions, permanent image display, a transient priority queue with immediate overrides,
 and a transparent OBS/browser visualizer with a public receive-only SignalR hub and Tone.js audio playback. A separate

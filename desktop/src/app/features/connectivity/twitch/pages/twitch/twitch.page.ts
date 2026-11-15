@@ -63,7 +63,7 @@ export class TwitchPage implements OnInit, OnDestroy {
   readonly notice = signal('');
   readonly busy = signal(false);
   readonly disconnectDialogOpen = signal(false);
-  readonly positions: readonly GridPosition[] = Array.from({ length: 32 }, (_, index) => ({
+  readonly positions: readonly GridPosition[] = Array.from({ length: 24 }, (_, index) => ({
     rowIndex: Math.floor(index / 8),
     columnIndex: index % 8,
   }));

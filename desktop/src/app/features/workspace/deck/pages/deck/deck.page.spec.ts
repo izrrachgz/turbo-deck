@@ -3,11 +3,19 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi } from 'vitest';
 
-import { BackendApiService, CellConfigModel, MediaAssetModel } from '../../../../../core/backend-api.service';
+import { BackendApiService, CellConfigModel, MediaAssetModel, ProfileModel } from '../../../../../core/backend-api.service';
 import { PreferencesService } from '../../../../../core/preferences/preferences.service';
 import { DeckPage } from './deck.page';
 
 describe('DeckPage cell editor', () => {
+  it('exposes a 3 by 8 grid without changing cell dimensions', () => {
+    const page = createPage({});
+
+    expect(page.positions).toHaveLength(24);
+    expect(page.positions[0]).toEqual({ rowIndex: 0, columnIndex: 0 });
+    expect(page.positions[23]).toEqual({ rowIndex: 2, columnIndex: 7 });
+  });
+
   it('accepts audio playback rates through 4x and rejects higher values', () => {
     const page = createPage({});
     const playbackRate = page.cellForm.controls.playbackRate;
@@ -103,6 +111,22 @@ describe('DeckPage cell editor', () => {
     expect(page.cellEditorStep()).toBe(2);
   });
 
+  it('requires an exact profile name before requesting deletion', async () => {
+    const deleteProfile = vi.fn();
+    const page = createPage({ deleteProfile });
+    page.profiles.set([profile(7, 'Main Deck')]);
+    page.selectedProfileId.set(7);
+    page.openProfileDeletion();
+
+    page.deleteProfileForm.controls.confirmationName.setValue('main deck');
+    expect(page.deleteProfileNameMatches()).toBe(false);
+    await page.deleteProfile();
+    expect(deleteProfile).not.toHaveBeenCalled();
+
+    page.deleteProfileForm.controls.confirmationName.setValue('Main Deck');
+    expect(page.deleteProfileNameMatches()).toBe(true);
+  });
+
 });
 
 function createPage(api: object): DeckPage {
@@ -160,6 +184,17 @@ function mediaAsset(id: number, displayName: string, kind: MediaAssetModel['kind
       createdUtc: new Date().toISOString(),
       modifiedUtc: new Date().toISOString(),
     },
+    createdUtc: new Date().toISOString(),
+    modifiedUtc: new Date().toISOString(),
+  };
+}
+
+function profile(id: number, name: string): ProfileModel {
+  return {
+    id,
+    name,
+    sortOrder: 1,
+    selectedPageNumber: 1,
     createdUtc: new Date().toISOString(),
     modifiedUtc: new Date().toISOString(),
   };

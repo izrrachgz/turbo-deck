@@ -5,6 +5,14 @@ import { BackendApiService, CellConfigModel, TwitchRewardBindingModel, TwitchRew
 import { TwitchPage } from './twitch.page';
 
 describe('TwitchPage', () => {
+  it('uses the same 3 by 8 grid as Grid Manager', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: {} }] });
+    const page = TestBed.runInInjectionContext(() => new TwitchPage());
+
+    expect(page.positions).toHaveLength(24);
+    expect(page.positions[23]).toEqual({ rowIndex: 2, columnIndex: 7 });
+  });
+
   it('does not request rewards when status already requires reauthorization', async () => {
     const api = {
       getTwitchStatus: vi.fn().mockResolvedValue({

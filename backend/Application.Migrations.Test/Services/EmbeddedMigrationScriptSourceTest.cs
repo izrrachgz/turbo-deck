@@ -21,9 +21,9 @@ public sealed class EmbeddedMigrationScriptSourceTest
 
         var scripts = await source.GetScriptsAsync(engine, TestContext.Current.CancellationToken);
 
-        Assert.Equal(11, scripts.Count);
-        Assert.Equal([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L], scripts.Select(script => script.MigrationId));
-        Assert.Equal(["Core", "Deck", "Media", "Playback", "Twitch", "Deck", "Settings", "Deck", "Deck", "Deck", "Core"],
+        Assert.Equal(12, scripts.Count);
+        Assert.Equal([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L], scripts.Select(script => script.MigrationId));
+        Assert.Equal(["Core", "Deck", "Media", "Playback", "Twitch", "Deck", "Settings", "Deck", "Deck", "Deck", "Core", "Deck"],
             scripts.Select(script => script.Module));
         Assert.Contains("MigrationRecord", scripts[0].Content, StringComparison.Ordinal);
         Assert.Contains("StoredFile", scripts[0].Content, StringComparison.Ordinal);
@@ -42,6 +42,7 @@ public sealed class EmbeddedMigrationScriptSourceTest
         Assert.Contains("DisplayPermanently", scripts[8].Content, StringComparison.Ordinal);
         Assert.Contains("orbit", scripts[9].Content, StringComparison.Ordinal);
         Assert.Contains("morph", scripts[9].Content, StringComparison.Ordinal);
+        Assert.Contains("BETWEEN 0 AND 2", scripts[11].Content, StringComparison.Ordinal);
         Assert.All(scripts, script => Assert.Equal(64, script.Checksum.Length));
         Assert.All(scripts, script => Assert.DoesNotContain("Account", script.Content, StringComparison.OrdinalIgnoreCase));
         Assert.All(scripts, script => Assert.DoesNotContain("Chat", script.Content, StringComparison.OrdinalIgnoreCase));

@@ -8,15 +8,21 @@
 
 @if (error()) { <p class="td-alert td-alert-danger">{{ error() }}</p> }
 @if (notice()) { <p class="td-alert">{{ notice() | text }}</p> }
+@if (transferringProfile()) { <p class="td-alert">{{ 'deck.transferInProgress' | text }}</p> }
 
-<section class="mb-5 flex items-end gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+<section class="mb-5 flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm">
   <label for="profile-select" class="min-w-0 flex-1 text-sm font-medium text-slate-700">
     <span class="mb-1.5 block">{{ 'deck.profile' | text }}</span>
     <select id="profile-select" class="td-field" [value]="selectedProfileId() ?? ''" (change)="selectProfile($any($event.target).value)">
       @for (profile of profiles(); track profile.id) { <option [value]="profile.id">{{ profile.name }}</option> }
     </select>
   </label>
-  <button type="button" class="td-button-secondary shrink-0" (click)="openProfileCreation()"><svg lucideIcon="plus" size="16" aria-hidden="true"></svg>{{ 'deck.createProfile' | text }}</button>
+  <div class="flex flex-wrap gap-2">
+    <button type="button" class="td-button-secondary shrink-0" [disabled]="transferringProfile() || !selectedProfileId()" (click)="exportProfile()"><svg lucideIcon="download" size="16" aria-hidden="true"></svg>{{ 'deck.exportProfile' | text }}</button>
+    <button type="button" class="td-button-secondary shrink-0" [disabled]="transferringProfile()" (click)="importProfile()"><svg lucideIcon="upload" size="16" aria-hidden="true"></svg>{{ 'deck.importProfile' | text }}</button>
+    <button type="button" class="td-button-secondary shrink-0" [disabled]="transferringProfile()" (click)="openProfileCreation()"><svg lucideIcon="plus" size="16" aria-hidden="true"></svg>{{ 'deck.createProfile' | text }}</button>
+    <button type="button" class="td-button-danger shrink-0" [disabled]="transferringProfile() || deletingProfile() || !selectedProfileId()" (click)="openProfileDeletion()"><svg lucideIcon="trash-2" size="16" aria-hidden="true"></svg>{{ 'deck.deleteProfile' | text }}</button>
+  </div>
 </section>
 
 @if (loading()) {
@@ -26,7 +32,7 @@
 } @else if (!pages().length) {
   <p class="td-empty-state">{{ 'deck.noPages' | text }}</p>
 } @else {
-  <section class="td-deck-grid grid grid-cols-4 gap-3 rounded-xl p-3 sm:gap-4 sm:p-4 lg:grid-cols-8" aria-label="4 by 8 media grid">
+  <section class="td-deck-grid grid grid-cols-4 gap-3 rounded-xl p-3 sm:gap-4 sm:p-4 lg:grid-cols-8" aria-label="3 by 8 media grid">
     @for (position of positions; track position.rowIndex + '-' + position.columnIndex) {
       <td-media-cell [rowIndex]="position.rowIndex" [columnIndex]="position.columnIndex" [label]="cellAt(position)?.label" [thumbnailUrl]="cellThumbnailUrl(position)" [editMode]="mode() === 'edit'" (activated)="activateCell(position)" />
     }
@@ -51,6 +57,27 @@
   <form [formGroup]="profileForm" (ngSubmit)="createProfile()">
     @if (profileCreationError()) { <p class="td-alert td-alert-danger">{{ profileCreationError() }}</p> }
     <td-text-input formControlName="name" [label]="'deck.profileName' | text" [maxLength]="100" />
+  </form>
+</td-confirmation-dialog>
+
+<td-confirmation-dialog
+  [open]="deleteProfileDialogOpen()"
+  (openChange)="setDeleteProfileDialogOpen($event)"
+  title="deck.deleteProfileTitle"
+  confirmLabel="deck.deleteProfile"
+  icon="trash-2"
+  [destructive]="true"
+  [processing]="deletingProfile()"
+  [confirmDisabled]="!deleteProfileNameMatches()"
+  (confirmed)="deleteProfile()">
+  @if (profileDeletionError()) { <p class="td-alert td-alert-danger">{{ profileDeletionError() }}</p> }
+  <p class="text-sm text-slate-700">{{ 'deck.deleteProfileMessage' | text }}</p>
+  <p class="mt-3 text-sm text-slate-700">{{ 'deck.deleteProfilePrompt' | text }} <strong>{{ selectedProfileName() }}</strong></p>
+  <form class="mt-4" [formGroup]="deleteProfileForm" (ngSubmit)="deleteProfile()">
+    <td-text-input formControlName="confirmationName" [label]="'deck.deleteProfileConfirmation' | text" [maxLength]="100" autocomplete="off" />
+    @if (deleteProfileForm.controls.confirmationName.touched && !deleteProfileNameMatches()) {
+      <p class="mt-1.5 text-sm text-red-700">{{ 'deck.deleteProfileNameMismatch' | text }}</p>
+    }
   </form>
 </td-confirmation-dialog>
 

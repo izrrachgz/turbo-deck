@@ -262,6 +262,22 @@ export interface DeckGridModel {
   cells: CellConfigModel[];
 }
 
+export interface ProfileImportResultModel {
+  profile: ProfileModel;
+  mediaCount: number;
+  cellCount: number;
+  twitchBindingCount: number;
+}
+
+export interface DeleteProfileResultModel {
+  profileId: number;
+  profileName: string;
+  cellCount: number;
+  mediaCount: number;
+  fileCount: number;
+  twitchBindingCount: number;
+}
+
 export interface AppSettingsModel {
   id: number;
   activeProfileId?: number | null;
@@ -402,6 +418,18 @@ export class BackendApiService {
 
   createProfile(name: string): Promise<ProfileModel> {
     return this.request('POST', '/api/v1/profiles', { name });
+  }
+
+  deleteProfile(profileId: number, confirmationName: string): Promise<DeleteProfileResultModel> {
+    return this.request('DELETE', `/api/v1/profiles/${profileId}`, { confirmationName });
+  }
+
+  exportProfile(profileId: number, profileName: string): Promise<{ fileName: string } | undefined> {
+    return window.turboDeck.exportProfile(profileId, profileName);
+  }
+
+  importProfile(): Promise<ProfileImportResultModel | undefined> {
+    return window.turboDeck.importProfile() as Promise<ProfileImportResultModel | undefined>;
   }
 
   getPages(profileId: number): Promise<DeckPageModel[]> {

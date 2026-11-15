@@ -54,7 +54,7 @@ untouched.
 
 The persistent product model contains `Profile`, `DeckPage`, sparse `CellConfig`, `MediaAsset`, and singleton
 `AppSettings` records. File bytes remain outside the database. The application enforces up to eight profiles, eight
-pages per profile, four-by-eight grid coordinates, web-compatible media uploads, and bounded playback parameters. Cell
+pages per profile, three-by-eight grid coordinates, web-compatible media uploads, and bounded playback parameters. Cell
 configuration persists image duration/permanence, image/video size and enter/exit transitions, plus audio speed and
 pitch. The transient queue immediately replaces the current item when an `override` cell is triggered, supports operator
 removal and reordering of pending items, promotes the next pending item when the current item is removed, and deliberately

@@ -35,17 +35,28 @@
     <section class="deck-empty">This profile does not have any pages.</section>
   } @else {
     <section class="deck-surface">
-      <div class="deck-grid" aria-label="Live deck cells">
+      <div
+        class="deck-grid"
+        [class.deck-grid-dragging]="swiping()"
+        [style.transform]="deckTransform()"
+        [style.opacity]="deckOpacity()"
+        aria-label="Live deck cells. Swipe left or right to change pages."
+        (pointerdown)="onDeckPointerDown($event)"
+        (pointermove)="onDeckPointerMove($event)"
+        (pointerup)="onDeckPointerUp($event)"
+        (pointercancel)="onDeckPointerCancel($event)"
+      >
         @for (slot of slots(); track slot.rowIndex + ':' + slot.columnIndex) {
           <button
             type="button"
             class="deck-cell"
             [class.deck-cell-current]="cellState(slot.cell) === 'current'"
             [class.deck-cell-queued]="cellState(slot.cell) === 'queued'"
+            [class.deck-cell-pressed]="triggeringCellId() === slot.cell?.id"
             [class.deck-cell-empty]="!canTrigger(slot.cell)"
             [disabled]="!canTrigger(slot.cell) || triggeringCellId() !== null"
             [attr.aria-label]="slot.cell?.label || 'Empty cell'"
-            (click)="trigger(slot.cell)">
+            (click)="triggerCell(slot.cell, $event)">
             @if (slot.cell; as cell) {
               @if (thumbnailUrl(cell); as thumbnail) { <img [src]="thumbnail" alt="" /> }
               <span class="cell-shade"></span>

@@ -71,8 +71,13 @@ internal static class FileUploadPolicy
 
     public static async Task<bool> HasValidSignatureAsync(IFormFile file, CancellationToken cancellationToken)
     {
-        string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         await using Stream stream = file.OpenReadStream();
+        return await HasValidSignatureAsync(stream, file.FileName, cancellationToken);
+    }
+
+    public static async Task<bool> HasValidSignatureAsync(Stream stream, string fileName, CancellationToken cancellationToken)
+    {
+        string extension = Path.GetExtension(fileName).ToLowerInvariant();
         byte[] header = new byte[16];
         int read = await stream.ReadAsync(header, cancellationToken);
         ReadOnlySpan<byte> bytes = header.AsSpan(0, read);

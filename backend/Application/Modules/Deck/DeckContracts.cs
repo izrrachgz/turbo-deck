@@ -40,3 +40,11 @@ public sealed record CellConfigModel(
     DateTime ModifiedUtc);
 
 public sealed record DeckGridModel(DeckPageModel Page, IReadOnlyList<CellConfigModel> Cells);
+
+public sealed record DeleteProfileResultModel(
+    long ProfileId,
+    string ProfileName,
+    int CellCount,
+    int MediaCount,
+    int FileCount,
+    int TwitchBindingCount);

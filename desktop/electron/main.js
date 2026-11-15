@@ -8,6 +8,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const readline = require('node:readline');
+const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
 const { HubConnectionBuilder, LogLevel } = require('@microsoft/signalr');
 const { createBackendLaunch, findMissingPackagedBackendPaths } = require('./backend-launch');
 const { startBackendWithRetry, stopBackendProcess } = require('./backend-process');
@@ -21,6 +23,8 @@ const API_CHANNEL = 'backend:request';
 const BACKEND_RESTART_CHANNEL = 'backend:restart';
 const UPLOAD_CHANNEL = 'backend:upload-file';
 const MEDIA_UPLOAD_CHANNEL = 'backend:upload-media';
+const PROFILE_EXPORT_CHANNEL = 'profiles:export';
+const PROFILE_IMPORT_CHANNEL = 'profiles:import';
 const VISUALIZER_OPEN_CHANNEL = 'visualizer:open';
 const DECK_OPEN_CHANNEL = 'deck:open';
 const PLAYBACK_QUEUE_CHANGED_CHANNEL = 'playback:queue-changed';
@@ -63,12 +67,13 @@ const API_ROUTE_RULES = Object.freeze({
   ],
   PUT: [
     /^\/system\/network$/,
-    /^\/api\/v1\/pages\/\d+\/cells\/[0-3]\/[0-7]$/,
+    /^\/api\/v1\/pages\/\d+\/cells\/[0-2]\/[0-7]$/,
     /^\/api\/v1\/settings$/,
     /^\/api\/v1\/twitch\/bindings\/[A-Za-z0-9_-]{1,128}$/
   ],
   DELETE: [
     /^\/files\/\d+$/,
+    /^\/api\/v1\/profiles\/\d+$/,
     /^\/api\/v1\/playback\/queue\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
     /^\/api\/v1\/twitch\/bindings\/[A-Za-z0-9_-]{1,128}$/
   ]
@@ -77,7 +82,7 @@ const MIME_TYPES = Object.freeze({
   '.csv': 'text/csv', '.gif': 'image/gif', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg',
   '.m4a': 'audio/mp4', '.md': 'text/markdown', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.ogg': 'audio/ogg', '.pdf': 'application/pdf',
   '.png': 'image/png', '.txt': 'text/plain', '.wav': 'audio/wav', '.webp': 'image/webp',
-  '.webm': 'video/webm', '.zip': 'application/zip'
+  '.webm': 'video/webm', '.zip': 'application/zip', '.turbo-deck': 'application/vnd.turbo-deck.profile+zip'
 });
 const instanceLock = app.requestSingleInstanceLock();
 
@@ -502,6 +507,56 @@ function registerIpcHandlers() {
     return backendRequest(mediaUploadPath(mediaKind), { method: 'POST', body: form });
   });
 
+  ipcMain.handle(PROFILE_EXPORT_CHANNEL, async (event, request) => {
+    assertTrustedSender(event, mainWindow?.webContents);
+    const profileId = Number(request?.profileId);
+    if (!Number.isSafeInteger(profileId) || profileId < 1) throw new Error('The selected profile is invalid.');
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export Turbo Deck profile',
+      defaultPath: `${safeExportName(request?.profileName)}.turbo-deck`,
+      filters: [{ name: 'Turbo Deck profile', extensions: ['turbo-deck'] }]
+    });
+    if (result.canceled || !result.filePath) return undefined;
+
+    const partialPath = `${result.filePath}.${randomBytes(8).toString('hex')}.partial`;
+    try {
+      const response = await backendFetch(`/api/v1/profiles/${profileId}/export`, { method: 'GET' });
+      if (!response.ok) throw new Error((await response.text()).trim() || `Profile export failed (${response.status}).`);
+      if (!response.body) throw new Error('The profile export did not return a file.');
+      await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(partialPath, { flags: 'wx' }));
+      try {
+        await fs.promises.rename(partialPath, result.filePath);
+      } catch (error) {
+        if (!['EEXIST', 'EPERM'].includes(error?.code)) throw error;
+        await fs.promises.rm(result.filePath, { force: true });
+        await fs.promises.rename(partialPath, result.filePath);
+      }
+      return { fileName: path.basename(result.filePath) };
+    } finally {
+      await fs.promises.rm(partialPath, { force: true });
+    }
+  });
+
+  ipcMain.handle(PROFILE_IMPORT_CHANNEL, async event => {
+    assertTrustedSender(event, mainWindow?.webContents);
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Import Turbo Deck profile',
+      properties: ['openFile'],
+      filters: [{ name: 'Turbo Deck profile', extensions: ['turbo-deck'] }]
+    });
+    if (result.canceled || result.filePaths.length === 0) return undefined;
+    const filePath = result.filePaths[0];
+    if (path.extname(filePath).toLowerCase() !== '.turbo-deck') throw new Error('Select a Turbo Deck profile package.');
+    const blob = await fs.openAsBlob(filePath, { type: MIME_TYPES['.turbo-deck'] });
+    const form = new FormData();
+    form.append('File', blob, path.basename(filePath));
+    return backendRequest('/api/v1/profiles/import', {
+      method: 'POST',
+      body: form,
+      signal: AbortSignal.timeout(60 * 60 * 1000)
+    });
+  });
+
   ipcMain.handle(VISUALIZER_OPEN_CHANNEL, async event => {
     assertTrustedSender(event, mainWindow?.webContents);
     await shell.openExternal(createVisualizerUrl(
@@ -645,14 +700,7 @@ function runProcess(command, args) {
 }
 
 async function backendRequest(apiPath, init) {
-  if (!backendUrl) throw new Error('The backend is not ready.');
-  const headers = new Headers(init.headers);
-  headers.set('X-Turbo-Deck-Control-Token', backendToken);
-  const response = await fetch(new URL(apiPath, backendUrl), {
-    ...init,
-    headers,
-    signal: init.signal ?? AbortSignal.timeout(120_000)
-  });
+  const response = await backendFetch(apiPath, init);
   const text = await response.text();
   if (text.length > MAX_API_RESPONSE_CHARACTERS) throw new Error('Backend response is too large.');
   let payload;
@@ -660,6 +708,22 @@ async function backendRequest(apiPath, init) {
   catch { payload = { title: text || `Backend request failed (${response.status}).` }; }
   if (!response.ok) throw new Error(payload?.detail ?? payload?.title ?? payload?.error ?? `Backend request failed (${response.status}).`);
   return payload;
+}
+
+async function backendFetch(apiPath, init) {
+  if (!backendUrl) throw new Error('The backend is not ready.');
+  const headers = new Headers(init.headers);
+  headers.set('X-Turbo-Deck-Control-Token', backendToken);
+  return fetch(new URL(apiPath, backendUrl), {
+    ...init,
+    headers,
+    signal: init.signal ?? AbortSignal.timeout(120_000)
+  });
+}
+
+function safeExportName(value) {
+  const normalized = String(value ?? 'profile').trim().replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-').replace(/[. ]+$/g, '');
+  return normalized.slice(0, 100) || 'profile';
 }
 
 async function stopBackend() {

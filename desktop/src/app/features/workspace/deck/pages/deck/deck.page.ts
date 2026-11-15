@@ -56,26 +56,33 @@ export class DeckPage implements OnInit {
   readonly mediaAssets = signal<readonly MediaAssetModel[]>([]);
   readonly loading = signal(true);
   readonly creatingProfile = signal(false);
+  readonly deletingProfile = signal(false);
   readonly loadingPage = signal(false);
   readonly savingCell = signal(false);
   readonly uploadingMedia = signal(false);
   readonly uploadingThumbnail = signal(false);
+  readonly transferringProfile = signal(false);
   readonly error = signal('');
   readonly profileCreationError = signal('');
+  readonly profileDeletionError = signal('');
   readonly notice = signal('');
   readonly mode = signal<'live' | 'edit'>('edit');
   readonly selectedProfileId = signal<number | null>(null);
   readonly selectedPageId = signal<number | null>(null);
   readonly profileDialogOpen = signal(false);
+  readonly deleteProfileDialogOpen = signal(false);
   readonly cellDialogOpen = signal(false);
   readonly cellEditorStep = signal<1 | 2 | 3>(1);
   readonly selectedPosition = signal<GridPosition | null>(null);
-  readonly positions: readonly GridPosition[] = Array.from({ length: 32 }, (_, index) => ({
+  readonly positions: readonly GridPosition[] = Array.from({ length: 24 }, (_, index) => ({
     rowIndex: Math.floor(index / 8),
     columnIndex: index % 8,
   }));
 
   readonly profileForm = this.fb.nonNullable.group({ name: ['', [Validators.required, Validators.maxLength(100)]] });
+  readonly deleteProfileForm = this.fb.nonNullable.group({
+    confirmationName: ['', [Validators.required, Validators.maxLength(100)]],
+  });
   readonly cellForm = this.fb.nonNullable.group({
     label: ['', Validators.maxLength(80)],
     enabled: [true],
@@ -148,6 +155,91 @@ export class DeckPage implements OnInit {
       this.profileCreationError.set(this.message(error));
     } finally {
       this.creatingProfile.set(false);
+    }
+  }
+
+  openProfileDeletion(): void {
+    if (!this.selectedProfileId()) return;
+    this.deleteProfileForm.reset();
+    this.profileDeletionError.set('');
+    this.deleteProfileDialogOpen.set(true);
+  }
+
+  setDeleteProfileDialogOpen(open: boolean): void {
+    if (!open && !this.deletingProfile()) {
+      this.deleteProfileForm.reset();
+      this.profileDeletionError.set('');
+    }
+    this.deleteProfileDialogOpen.set(open);
+  }
+
+  deleteProfileNameMatches(): boolean {
+    const selected = this.profiles().find(profile => profile.id === this.selectedProfileId());
+    return !!selected && this.deleteProfileForm.controls.confirmationName.value === selected.name;
+  }
+
+  selectedProfileName(): string {
+    return this.profiles().find(profile => profile.id === this.selectedProfileId())?.name ?? '';
+  }
+
+  async deleteProfile(): Promise<void> {
+    const selected = this.profiles().find(profile => profile.id === this.selectedProfileId());
+    if (!selected || !this.deleteProfileNameMatches()) {
+      this.deleteProfileForm.controls.confirmationName.markAsTouched();
+      return;
+    }
+    this.deletingProfile.set(true);
+    this.profileDeletionError.set('');
+    this.error.set('');
+    this.notice.set('');
+    try {
+      await this.api.deleteProfile(selected.id, this.deleteProfileForm.controls.confirmationName.value);
+      this.deleteProfileDialogOpen.set(false);
+      this.deleteProfileForm.reset();
+      await Promise.all([this.loadProfiles(), this.loadMediaAssets()]);
+      await this.persistActiveProfile();
+      this.notice.set('deck.deleteProfileComplete');
+    } catch (error) {
+      if (this.deleteProfileDialogOpen()) this.profileDeletionError.set(this.message(error));
+      else this.error.set(this.message(error));
+    } finally {
+      this.deletingProfile.set(false);
+    }
+  }
+
+  async exportProfile(): Promise<void> {
+    const profile = this.profiles().find(candidate => candidate.id === this.selectedProfileId());
+    if (!profile || this.transferringProfile()) return;
+    this.transferringProfile.set(true);
+    this.error.set('');
+    this.notice.set('');
+    try {
+      const result = await this.api.exportProfile(profile.id, profile.name);
+      if (result) this.notice.set('deck.exportComplete');
+    } catch (error) {
+      this.error.set(this.message(error));
+    } finally {
+      this.transferringProfile.set(false);
+    }
+  }
+
+  async importProfile(): Promise<void> {
+    if (this.transferringProfile()) return;
+    this.transferringProfile.set(true);
+    this.error.set('');
+    this.notice.set('');
+    try {
+      const result = await this.api.importProfile();
+      if (!result) return;
+      await Promise.all([this.loadProfiles(), this.loadMediaAssets()]);
+      this.selectedProfileId.set(result.profile.id);
+      await this.loadPages();
+      await this.persistActiveProfile();
+      this.notice.set('deck.importComplete');
+    } catch (error) {
+      this.error.set(this.message(error));
+    } finally {
+      this.transferringProfile.set(false);
     }
   }
 

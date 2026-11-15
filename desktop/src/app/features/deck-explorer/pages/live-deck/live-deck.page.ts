@@ -16,6 +16,8 @@ interface DeckCellSlot {
   cell: CellConfigModel | null;
 }
 
+type SwipeAxis = 'pending' | 'horizontal' | 'vertical';
+
 @Component({
   selector: 'td-live-deck',
   standalone: true,
@@ -32,9 +34,13 @@ export class LiveDeckPage implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly connected = signal(false);
   readonly triggeringCellId = signal<number | null>(null);
+  readonly swipeOffset = signal(0);
+  readonly swiping = signal(false);
+  readonly deckTransform = computed(() => `translate3d(${this.swipeOffset()}px, 0, 0)`);
+  readonly deckOpacity = computed(() => Math.max(.72, 1 - Math.abs(this.swipeOffset()) / 900));
   readonly slots = computed<DeckCellSlot[]>(() => {
     const byPosition = new Map(this.grid()?.cells.map(cell => [`${cell.rowIndex}:${cell.columnIndex}`, cell]) ?? []);
-    return Array.from({ length: 32 }, (_, index) => {
+    return Array.from({ length: 24 }, (_, index) => {
       const rowIndex = Math.floor(index / 8);
       const columnIndex = index % 8;
       return { rowIndex, columnIndex, cell: byPosition.get(`${rowIndex}:${columnIndex}`) ?? null };
@@ -49,6 +55,14 @@ export class LiveDeckPage implements OnInit, OnDestroy {
   private catalogPoll?: ReturnType<typeof setInterval>;
   private queueLoading = false;
   private gridLoading = false;
+  private swipePointerId: number | null = null;
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+  private swipeStartedAt = 0;
+  private swipeWidth = 1;
+  private swipeAxis: SwipeAxis = 'pending';
+  private swipeDeltaX = 0;
+  private suppressPointerClicksUntil = 0;
 
   async ngOnInit(): Promise<void> {
     await this.loadProfiles(true);
@@ -93,6 +107,76 @@ export class LiveDeckPage implements OnInit, OnDestroy {
     }
   }
 
+  triggerCell(cell: CellConfigModel | null, event: MouseEvent): void {
+    if (event.detail > 0 && performance.now() < this.suppressPointerClicksUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    void this.trigger(cell);
+  }
+
+  onDeckPointerDown(event: PointerEvent): void {
+    if (!event.isPrimary || event.button !== 0 || this.pages().length < 2 || this.triggeringCellId() !== null) return;
+    this.swipePointerId = event.pointerId;
+    this.swipeStartX = event.clientX;
+    this.swipeStartY = event.clientY;
+    this.swipeStartedAt = performance.now();
+    this.swipeWidth = Math.max(1, (event.currentTarget as HTMLElement).clientWidth);
+    this.swipeAxis = 'pending';
+    this.swipeDeltaX = 0;
+  }
+
+  onDeckPointerMove(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) return;
+    const deltaX = event.clientX - this.swipeStartX;
+    const deltaY = event.clientY - this.swipeStartY;
+
+    if (this.swipeAxis === 'pending') {
+      if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 8) return;
+      this.swipeAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+      if (this.swipeAxis === 'vertical') {
+        this.resetSwipeTracking();
+        return;
+      }
+      this.swiping.set(true);
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    }
+
+    if (this.swipeAxis !== 'horizontal') return;
+    event.preventDefault();
+    this.swipeDeltaX = deltaX;
+    const direction = deltaX < 0 ? 1 : -1;
+    const hasPageInDirection = this.pageInDirection(direction) !== null;
+    const resistedDelta = hasPageInDirection ? deltaX : deltaX * .22;
+    const maximumOffset = this.swipeWidth * .42;
+    this.swipeOffset.set(Math.max(-maximumOffset, Math.min(maximumOffset, resistedDelta)));
+  }
+
+  onDeckPointerUp(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) return;
+    const wasHorizontalSwipe = this.swipeAxis === 'horizontal';
+    const elapsed = Math.max(1, performance.now() - this.swipeStartedAt);
+    const velocity = Math.abs(this.swipeDeltaX) / elapsed;
+    const threshold = Math.min(84, this.swipeWidth * .18);
+    const shouldChangePage = Math.abs(this.swipeDeltaX) >= threshold
+      || (Math.abs(this.swipeDeltaX) >= 28 && velocity >= .5);
+    const direction = this.swipeDeltaX < 0 ? 1 : -1;
+    const destination = wasHorizontalSwipe && shouldChangePage ? this.pageInDirection(direction) : null;
+
+    if (wasHorizontalSwipe) this.suppressPointerClicksUntil = performance.now() + 400;
+    this.releasePointer(event);
+    this.resetSwipeTracking();
+    if (destination) void this.selectPage(destination.id);
+  }
+
+  onDeckPointerCancel(event: PointerEvent): void {
+    if (event.pointerId !== this.swipePointerId) return;
+    if (this.swipeAxis === 'horizontal') this.suppressPointerClicksUntil = performance.now() + 400;
+    this.releasePointer(event);
+    this.resetSwipeTracking();
+  }
+
   thumbnailUrl(cell: CellConfigModel): string | null {
     return cell.thumbnailMediaAssetId ? `/api/v1/deck-explorer/thumbnails/${cell.thumbnailMediaAssetId}` : null;
   }
@@ -105,6 +189,26 @@ export class LiveDeckPage implements OnInit, OnDestroy {
 
   canTrigger(cell: CellConfigModel | null): boolean {
     return cell?.enabled === true && cell.mediaAssetId !== null && cell.mediaAssetId !== undefined;
+  }
+
+  private pageInDirection(direction: number): DeckPageModel | null {
+    const orderedPages = [...this.pages()].sort((left, right) => left.position - right.position);
+    const currentIndex = orderedPages.findIndex(page => page.id === this.selectedPageId);
+    if (currentIndex < 0) return null;
+    return orderedPages[currentIndex + direction] ?? null;
+  }
+
+  private releasePointer(event: PointerEvent): void {
+    const target = event.currentTarget as HTMLElement;
+    if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+  }
+
+  private resetSwipeTracking(): void {
+    this.swipePointerId = null;
+    this.swipeAxis = 'pending';
+    this.swipeDeltaX = 0;
+    this.swiping.set(false);
+    this.swipeOffset.set(0);
   }
 
   private async loadProfiles(showLoading = false): Promise<void> {

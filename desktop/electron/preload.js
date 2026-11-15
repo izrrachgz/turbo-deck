@@ -15,6 +15,12 @@ contextBridge.exposeInMainWorld('turboDeck', Object.freeze({
   selectAndUploadMedia(displayName, mediaKind) {
     return ipcRenderer.invoke('backend:upload-media', { displayName, mediaKind });
   },
+  exportProfile(profileId, profileName) {
+    return ipcRenderer.invoke('profiles:export', { profileId, profileName });
+  },
+  importProfile() {
+    return ipcRenderer.invoke('profiles:import');
+  },
   openVisualizer() {
     return ipcRenderer.invoke('visualizer:open');
   },

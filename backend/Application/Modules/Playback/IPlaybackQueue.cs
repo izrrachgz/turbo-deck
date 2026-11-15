@@ -13,6 +13,10 @@ public interface IPlaybackQueue
 
     Task<PlaybackQueueSnapshotModel> RemoveAsync(Guid itemId, CancellationToken cancellationToken = default);
 
+    Task<PlaybackQueueSnapshotModel> RemoveCellsAsync(
+        IReadOnlySet<long> cellConfigIds,
+        CancellationToken cancellationToken = default);
+
     Task<PlaybackQueueSnapshotModel> MoveAsync(Guid itemId, int offset, CancellationToken cancellationToken = default);
 
     Task<PlaybackQueueSnapshotModel> ClearAsync(bool stopCurrent, CancellationToken cancellationToken = default);

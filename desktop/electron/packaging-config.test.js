@@ -25,3 +25,15 @@ test('packaged UI security policy continues to reject inline scripts', () => {
   assert.match(policy, /script-src 'self'/);
   assert.doesNotMatch(policy, /script-src[^;]*'unsafe-inline'/);
 });
+
+test('standalone web pages use the Turbo Deck icon', () => {
+  for (const filename of ['visualizer.html', 'deck.html']) {
+    const html = fs.readFileSync(path.join(desktopRoot, 'src', filename), 'utf8');
+
+    assert.match(
+      html,
+      /<link rel="icon" type="image\/png" href="assets\/turbo-deck\.png">/,
+      `Expected ${filename} to reference the shared Turbo Deck icon`,
+    );
+  }
+});

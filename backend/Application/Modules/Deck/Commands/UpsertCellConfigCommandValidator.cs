@@ -12,8 +12,8 @@ internal sealed class UpsertCellConfigCommandValidator : AbstractValidator<Upser
             .GreaterThan(0)
             .WithMessage(messages.Get(nameof(ValidationText.Field_Must_Be_Greater_Than), messages.Get(nameof(FieldNames.Id)), 0));
         RuleFor(command => command.RowIndex)
-            .InclusiveBetween(0, 3)
-            .WithMessage(messages.Get(nameof(ValidationText.Field_Must_Be_Between), messages.Get("Row"), 0, 3));
+            .InclusiveBetween(0, 2)
+            .WithMessage(messages.Get(nameof(ValidationText.Field_Must_Be_Between), messages.Get("Row"), 0, 2));
         RuleFor(command => command.ColumnIndex)
             .InclusiveBetween(0, 7)
             .WithMessage(messages.Get(nameof(ValidationText.Field_Must_Be_Between), messages.Get("Column"), 0, 7));
