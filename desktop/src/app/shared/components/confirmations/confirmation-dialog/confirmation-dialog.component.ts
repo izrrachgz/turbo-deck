@@ -9,6 +9,7 @@ import { TextPipe } from '../../../../core/i18n/text.pipe';
   standalone: true,
   imports: [LucideDynamicIcon, NgClass, TextPipe],
   templateUrl: './confirmation-dialog.component.html',
+  host: { '[attr.title]': 'null' },
 })
 export class ConfirmationDialogComponent implements AfterViewChecked {
   @ViewChild('dialog') private dialog?: ElementRef<HTMLDialogElement>;

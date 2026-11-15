@@ -31,6 +31,62 @@ describe('NetworkPage', () => {
     expect(page.instanceName()).toBe('Turbo Deck Backend');
   });
 
+  it('builds browser-client examples from the active transport, port, and LAN addresses', () => {
+    const api = { getNetwork: vi.fn().mockResolvedValue(networkSettings()) };
+    TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });
+    const page = TestBed.runInInjectionContext(() => new NetworkPage());
+    page.suggestedAddresses = ['localhost', '0.0.0.0', '192.168.50.24'];
+    page.suggestedCertificateIdentities = ['localhost', 'turbo-deck.local'];
+    page.port = 52100;
+    page.httpsEnabled = true;
+
+    expect(page.accessGuideIpAddress()).toBe('192.168.50.24');
+    expect(page.browserClientUrl(page.accessGuideIpAddress(), '/visualizer/')).toBe('https://192.168.50.24:52100/visualizer/');
+    expect(page.browserClientUrl(page.accessGuideHostname(), '/deck/')).toBe('https://turbo-deck.local:52100/deck/');
+  });
+
+  it('opens contextual access help from the page header', async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value(this: HTMLDialogElement) { this.setAttribute('open', ''); },
+    });
+    const api = { getNetwork: vi.fn().mockResolvedValue(networkSettings()) };
+    const i18n = { culture$: new BehaviorSubject('en-US'), text: (key: string) => key };
+    TestBed.configureTestingModule({
+      imports: [NetworkPage],
+      providers: [
+        { provide: BackendApiService, useValue: api },
+        { provide: I18nService, useValue: i18n },
+        provideLucideIcons(
+          LucideBadgeCheck,
+          LucideLayoutGrid,
+          LucideMonitorSmartphone,
+          LucidePencil,
+          LucidePlus,
+          LucideQrCode,
+          LucideRadio,
+          LucideRotateCw,
+          LucideShield,
+          LucideSmartphone,
+          LucideTrash2,
+        ),
+      ],
+    });
+    const fixture = TestBed.createComponent(NetworkPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const helpButton = fixture.nativeElement.querySelector('.td-network-help-trigger') as HTMLButtonElement;
+    helpButton.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.accessHelpDialogOpen()).toBe(true);
+    expect(fixture.nativeElement.querySelector('dialog')?.open).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('network.accessHostedTitle');
+    expect(fixture.nativeElement.querySelector('td-confirmation-dialog')?.hasAttribute('title')).toBe(false);
+  });
+
   it('replaces existing listeners when the wildcard suggestion is selected', () => {
     const api = { getNetwork: vi.fn().mockResolvedValue(networkSettings()) };
     TestBed.configureTestingModule({ providers: [{ provide: BackendApiService, useValue: api }] });

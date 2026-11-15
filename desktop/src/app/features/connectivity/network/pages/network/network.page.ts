@@ -45,6 +45,7 @@ export class NetworkPage implements OnInit {
   readonly addressDialogOpen = signal(false);
   readonly corsOriginDialogOpen = signal(false);
   readonly httpsInfoDialogOpen = signal(false);
+  readonly accessHelpDialogOpen = signal(false);
 
   mode = 0;
   addresses = ['127.0.0.1'];
@@ -138,6 +139,26 @@ export class NetworkPage implements OnInit {
   certificateExpiryText(): string {
     if (!this.certificateExpiresUtc) return '';
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(this.certificateExpiresUtc));
+  }
+
+  accessGuideIpAddress(): string {
+    return this.suggestedAddresses.find(address => {
+      const parts = address.split('.').map(Number);
+      return parts.length === 4
+        && parts.every(part => Number.isInteger(part) && part >= 0 && part <= 255)
+        && parts[0] !== 0
+        && parts[0] !== 127;
+    }) ?? '192.168.1.20';
+  }
+
+  accessGuideHostname(): string {
+    const identities = [...this.certificateIdentities, ...this.suggestedCertificateIdentities];
+    return identities.find(identity => identity.toLowerCase() === 'turbo-deck.local') ?? 'turbo-deck.local';
+  }
+
+  browserClientUrl(host: string, path: '/visualizer/' | '/deck/'): string {
+    const formattedHost = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+    return `${this.httpsEnabled ? 'https' : 'http'}://${formattedHost}:${this.port}${path}`;
   }
 
   async openVisualizer(): Promise<void> {
